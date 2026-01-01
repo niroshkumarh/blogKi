@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Archive {{ month_key }} | Wide Angle{% endblock %}
+
+{% block content %}
+<div class="archive-header pt-50 text-center">
+    <div class="container">
+        <h2 class="font-weight-900">Wide Angle</h2>
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
+            <span></span> {{ month_key or 'All Posts' }}
+        </div>
+        <div class="bt-1 border-color-1 mt-30 mb-50"></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="loop-grid mb-30">
+        <div class="row">
+            {% if posts %}
+                {% for post in posts %}
+                <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated">
+                    <div class="post-card-1 border-radius-10 hover-up">
+                        <div class="post-thumb thumb-overlay img-hover-slide position-relative" 
+                             style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-1.jpg') }})">
+                            <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}"></a>
+                            <span class="top-right-icon bg-warning"><i class="elegant-icon icon_star_alt"></i></span>
+                        </div>
+                        <div class="post-content p-30">
+                            <div class="entry-meta meta-0 font-small mb-10">
+                                {% if post.category %}
+                                <a href="#"><span class="post-cat text-warning">{{ post.category }}</span></a>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex post-card-content">
+                                <h5 class="post-title mb-20 font-weight-900">
+                                    <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                                </h5>
+                                <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                                    <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
+                                    {% if post.read_time %}
+                                    <span class="time-reading has-dot">{{ post.read_time }} mins read</span>
+                                    {% endif %}
+                                    <span class="post-by has-dot">{{ post.get_like_count() }} likes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center mt-50 mb-50">
+                    <h3>No posts available yet</h3>
+                    <p class="text-muted">Check back soon for new content!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

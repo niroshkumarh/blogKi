@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ post.title }}</h1>
+    <a href="{{ url_for('admin.posts_list') }}" class="btn btn-secondary">Back to Posts</a>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5>Total Views</h5>
+            <h2>{{ total_views }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5>Avg Completion</h5>
+            <h2>{{ avg_completion }}%</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5>Avg Read Time</h5>
+            <h2>{{ avg_time }} min</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5>Engagement</h5>
+            <h2>{{ likes|length }} <i class="fas fa-heart text-danger"></i> {{ comments|length }} <i class="fas fa-comment text-info"></i></h2>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h4>Who Read This</h4>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Last Read</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for viewer in viewers %}
+                    <tr>
+                        <td>{{ viewer.name or viewer.email }}</td>
+                        <td>{{ viewer.last_login_at.strftime('%Y-%m-%d %H:%M') if viewer.last_login_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h4>Who Liked This</h4>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Liked At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for like in likes %}
+                    <tr>
+                        <td>{{ like.user.name or like.user.email }}</td>
+                        <td>{{ like.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="stat-card">
+            <h4>Comments</h4>
+            {% for comment in comments %}
+            <div class="border-bottom pb-3 mb-3">
+                <strong>{{ comment.user.name or comment.user.email }}</strong>
+                <span class="text-muted small">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <p class="mt-2">{{ comment.body }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

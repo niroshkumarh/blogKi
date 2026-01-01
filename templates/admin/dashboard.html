@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5><i class="fas fa-file-alt text-primary"></i> Published Posts</h5>
+            <h2>{{ total_posts }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5><i class="fas fa-users text-success"></i> Total Users</h5>
+            <h2>{{ total_users }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5><i class="fas fa-comments text-info"></i> Total Comments</h5>
+            <h2>{{ total_comments }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5><i class="fas fa-heart text-danger"></i> Total Likes</h5>
+            <h2>{{ total_likes }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="stat-card">
+            <h4>Recent Posts Performance</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Views</th>
+                        <th>Likes</th>
+                        <th>Comments</th>
+                        <th>Avg Completion</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in post_stats %}
+                    <tr>
+                        <td>{{ stat.post.title }}</td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if stat.post.status == 'published' else 'warning' }}">
+                                {{ stat.post.status }}
+                            </span>
+                        </td>
+                        <td>{{ stat.views }}</td>
+                        <td>{{ stat.likes }}</td>
+                        <td>{{ stat.comments }}</td>
+                        <td>{{ stat.avg_completion }}%</td>
+                        <td>
+                            <a href="{{ url_for('admin.post_stats', post_id=stat.post.id) }}" class="btn btn-sm btn-info">Stats</a>
+                            <a href="{{ url_for('admin.post_edit', post_id=stat.post.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

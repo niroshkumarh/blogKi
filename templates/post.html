@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} | Wide Angle{% endblock %}
+{% block description %}{{ post.excerpt or post.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.comments-area {
+    margin-top: 50px;
+}
+.comment-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+.comment-item {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+.like-button {
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.3s;
+}
+.like-button.liked {
+    color: #e74c3c;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-grey pb-30">
+    <div class="container single-content">
+        <div class="entry-header entry-header-style-1 mb-50 pt-50">
+            <h1 class="entry-title mb-50 font-weight-900">
+                {{ post.title }}
+            </h1>
+            <div class="entry-meta align-items-center meta-2 font-small color-muted">
+                <p class="mb-5">
+                    <span class="post-on mr-10">{{ post.published_at.strftime('%B %d, %Y at %H:%M') if post.published_at }}</span>
+                    {% if post.read_time %}
+                    <span class="time-reading has-dot mr-10">{{ post.read_time }} mins read</span>
+                    {% endif %}
+                    <span class="hit-count has-dot">{{ post.get_view_count() }} views</span>
+                </p>
+            </div>
+        </div>
+        
+        <article class="entry-wraper mb-50">
+            {% if post.hero_image_path %}
+            <div class="entry-main-image mb-40">
+                <img src="{{ post.hero_image_path }}" alt="{{ post.title }}">
+            </div>
+            {% endif %}
+            
+            <div class="entry-content">
+                {{ post.html_content|safe }}
+            </div>
+            
+            <!-- Like Section -->
+            <div class="entry-bottom mt-50 mb-30 wow fadeIn animated">
+                <div class="tags">
+                    <span class="like-button {% if user_liked %}liked{% endif %}" 
+                          id="like-btn" 
+                          data-post-id="{{ post.id }}"
+                          title="Like this post">
+                        <i class="elegant-icon {% if user_liked %}icon_heart{% else %}icon_heart_alt{% endif %}"></i>
+                        <span id="like-count">{{ like_count }}</span>
+                    </span>
+                </div>
+            </div>
+        </article>
+        
+        <!-- Comments Section -->
+        <div class="comments-area">
+            <div class="widget-header-2 position-relative mb-30">
+                <h5 class="mt-5 mb-30">Comments (<span id="comment-count">{{ comments|length }}</span>)</h5>
+            </div>
+            
+            <!-- Comment Form -->
+            <div class="comment-form mb-50">
+                <h4>Leave a Comment</h4>
+                <form id="comment-form">
+                    <div class="form-group">
+                        <textarea class="form-control" id="comment-body" placeholder="Write your comment..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post Comment</button>
+                </form>
+            </div>
+            
+            <!-- Comments List -->
+            <div id="comments-list">
+                {% for comment in comments %}
+                <div class="comment-item" data-comment-id="{{ comment.id }}">
+                    <strong>{{ comment.user.name or comment.user.email }}</strong>
+                    <span class="text-muted font-small ml-10">{{ comment.created_at.strftime('%B %d, %Y at %H:%M') }}</span>
+                    <p class="mt-10">{{ comment.body }}</p>
+                    {% if session.user_id == comment.user_id or session.is_admin %}
+                    <button class="btn btn-sm btn-danger delete-comment" data-comment-id="{{ comment.id }}">Delete</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let postId = {{ post.id }};
+let readStartTime = Date.now();
+let maxScroll = 0;
+
+// Track reading progress
+function trackReadProgress() {
+    let scrollTop = $(window).scrollTop();
+    let docHeight = $(document).height();
+    let winHeight = $(window).height();
+    let scrollPercent = Math.round((scrollTop / (docHeight - winHeight)) * 100);
+    
+    maxScroll = Math.max(maxScroll, scrollPercent);
+    
+    let timeSpent = Math.round((Date.now() - readStartTime) / 1000);
+    
+    // Send event every 30 seconds or on scroll milestone
+    if (timeSpent % 30 === 0 || maxScroll % 25 === 0) {
+        $.ajax({
+            url: `/api/read-event/${postId}`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                percent: maxScroll,
+                seconds: timeSpent
+            })
+        });
+    }
+}
+
+$(window).scroll(trackReadProgress);
+setInterval(trackReadProgress, 30000);
+
+// Like button
+$('#like-btn').click(function() {
+    $.ajax({
+        url: `/api/like/${postId}`,
+        method: 'POST',
+        success: function(data) {
+            $('#like-count').text(data.like_count);
+            if (data.liked) {
+                $('#like-btn').addClass('liked').find('i').removeClass('icon_heart_alt').addClass('icon_heart');
+            } else {
+                $('#like-btn').removeClass('liked').find('i').removeClass('icon_heart').addClass('icon_heart_alt');
+            }
+        },
+        error: function() {
+            alert('Failed to like post');
+        }
+    });
+});
+
+// Comment form
+$('#comment-form').submit(function(e) {
+    e.preventDefault();
+    let body = $('#comment-body').val().trim();
+    
+    if (!body) return;
+    
+    $.ajax({
+        url: `/api/comment/${postId}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ body: body }),
+        success: function(data) {
+            // Add comment to list
+            let commentHtml = `
+                <div class="comment-item" data-comment-id="${data.comment.id}">
+                    <strong>${data.comment.user_name}</strong>
+                    <span class="text-muted font-small ml-10">Just now</span>
+                    <p class="mt-10">${data.comment.body}</p>
+                    <button class="btn btn-sm btn-danger delete-comment" data-comment-id="${data.comment.id}">Delete</button>
+                </div>
+            `;
+            $('#comments-list').prepend(commentHtml);
+            $('#comment-body').val('');
+            $('#comment-count').text(parseInt($('#comment-count').text()) + 1);
+        },
+        error: function() {
+            alert('Failed to post comment');
+        }
+    });
+});
+
+// Delete comment
+$(document).on('click', '.delete-comment', function() {
+    if (!confirm('Delete this comment?')) return;
+    
+    let commentId = $(this).data('comment-id');
+    let $comment = $(this).closest('.comment-item');
+    
+    $.ajax({
+        url: `/api/comment/${commentId}`,
+        method: 'DELETE',
+        success: function() {
+            $comment.remove();
+            $('#comment-count').text(parseInt($('#comment-count').text()) - 1);
+        },
+        error: function() {
+            alert('Failed to delete comment');
+        }
+    });
+});
+</script>
+{% endblock %}
+
