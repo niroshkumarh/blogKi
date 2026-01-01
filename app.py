@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.middleware.proxy_fix import ProxyFix
 # from flask_session import Session  # Not needed - using Flask's built-in session
 from dotenv import load_dotenv
 
@@ -14,6 +15,12 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
+
+# Apply ProxyFix middleware to handle X-Forwarded-* headers from Nginx/Cloudflare
+# This is critical for OAuth to work correctly behind a reverse proxy
+app.wsgi_app = ProxyFix(
+    app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+)
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -30,10 +37,13 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Session configuration for OAuth - use Flask's built-in signed cookie sessions
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+# Detect if we're in production (behind HTTPS proxy)
+is_production = os.environ.get('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = is_production  # Only send cookies over HTTPS in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+app.config['PREFERRED_URL_SCHEME'] = 'https' if is_production else 'http'
 
 # Entra ID Configuration
 app.config['ENTRA_CLIENT_ID'] = os.environ.get('CLIENT_ID', '423dd38a-439a-4b99-a313-9472d2c0dad6')
