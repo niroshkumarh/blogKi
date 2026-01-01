@@ -2,7 +2,7 @@
 
 ## ✅ What's Been Configured
 
-### 1. **PostgreSQL Database** (Port 5432)
+### 1. **PostgreSQL Database** (Port 4345)
 - Image: `postgres:16-alpine`
 - Database: `blogsite`
 - User: `bloguser`
@@ -142,7 +142,7 @@ ADMIN_EMAILS=your.email@example.com
 
 - Both containers on default bridge network
 - Web container can access DB via hostname `db`
-- DB exposed on host: `localhost:5432` (optional, can remove)
+- DB exposed on host: `localhost:4345` (optional, can remove)
 - Web exposed on host: `localhost:4343`
 
 ### Health Checks
@@ -162,7 +162,7 @@ docker-compose ps
 Expected output:
 ```
 NAME            STATUS       PORTS
-blogki-db       healthy      0.0.0.0:5432->5432/tcp
+blogki-db       healthy      0.0.0.0:4345->5432/tcp
 blogki-web      running      0.0.0.0:4343->4343/tcp
 ```
 

@@ -10,7 +10,7 @@
 🌐 **http://localhost:4343**
 
 ### **Database (PostgreSQL)**
-📊 **localhost:5432**
+📊 **localhost:4345**
 - Database: `blogsite`
 - User: `bloguser`
 - Password: `blogpass123`
