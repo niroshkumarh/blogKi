@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: blogki-db
+    restart: always
+    environment:
+      POSTGRES_DB: blogsite
+      POSTGRES_USER: bloguser
+      POSTGRES_PASSWORD: blogpass123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloguser -d blogsite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flask Web Application
+  web:
+    build: .
+    container_name: blogki-web
+    restart: always
+    ports:
+      - "4343:4343"
+    environment:
+      - DATABASE_URL=postgresql://bloguser:blogpass123@db:5432/blogsite
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - TENANT_ID=${TENANT_ID}
+      - REDIRECT_URI=${REDIRECT_URI:-http://localhost:4343/auth/callback}
+      - ADMIN_EMAILS=${ADMIN_EMAILS}
+      - FLASK_PORT=4343
+    volumes:
+      - ./uploads:/app/uploads
+      - ./flask_session:/app/flask_session
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        python init_db_postgres.py &&
+        python migrate_posts.py &&
+        python app.py
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+

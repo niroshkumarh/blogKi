@@ -110,7 +110,11 @@ def post_new():
                     filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
                     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                     file.save(filepath)
-                    hero_image_path = f"/{filepath}"
+                    # Use forward slashes for web URLs
+                    hero_image_path = f"/{filepath.replace(chr(92), '/')}"  # chr(92) is backslash
+            
+            # Handle related posts
+            related_posts = request.form.getlist('related_posts')
             
             # Create post
             post = Post(
@@ -126,6 +130,10 @@ def post_new():
                 published_at=published_at
             )
             
+            # Set related posts
+            if related_posts:
+                post.set_related_posts(related_posts)
+            
             db.session.add(post)
             db.session.commit()
             
@@ -137,7 +145,8 @@ def post_new():
             flash('Failed to create post', 'error')
             return redirect(url_for('admin.post_new'))
     
-    return render_template('admin/post_edit.html', post=None)
+    all_posts = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).all()
+    return render_template('admin/post_edit.html', post=None, all_posts=all_posts)
 
 
 @admin_bp.route('/posts/<int:post_id>/edit', methods=['GET', 'POST'])
@@ -185,7 +194,12 @@ def post_edit(post_id):
                     filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
                     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                     file.save(filepath)
-                    post.hero_image_path = f"/{filepath}"
+                    # Use forward slashes for web URLs
+                    post.hero_image_path = f"/{filepath.replace(chr(92), '/')}"  # chr(92) is backslash
+            
+            # Handle related posts
+            related_posts = request.form.getlist('related_posts')
+            post.set_related_posts(related_posts if related_posts else None)
             
             post.updated_at = datetime.utcnow()
             
@@ -199,7 +213,8 @@ def post_edit(post_id):
             flash('Failed to update post', 'error')
             return redirect(url_for('admin.post_edit', post_id=post_id))
     
-    return render_template('admin/post_edit.html', post=post)
+    all_posts = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).all()
+    return render_template('admin/post_edit.html', post=post, all_posts=all_posts)
 
 
 @admin_bp.route('/posts/<int:post_id>/delete', methods=['POST'])
@@ -275,9 +290,12 @@ def upload_image():
             filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
+            # Use forward slashes for web URLs
+            web_path = f"/{filepath.replace(chr(92), '/')}"  # chr(92) is backslash
+            
             return jsonify({
                 'success': True,
-                'url': f"/{filepath}"
+                'url': web_path
             })
         
         return jsonify({'error': 'Invalid file type'}), 400

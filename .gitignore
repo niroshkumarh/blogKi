@@ -26,6 +26,7 @@ wheels/
 # Flask
 instance/
 .webassets-cache
+flask_session/
 
 # Database
 *.db
@@ -52,4 +53,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Docker
+docker-compose.override.yml
+*.sql
+*.dump
 

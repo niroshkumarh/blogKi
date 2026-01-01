@@ -1,95 +1,321 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ post.title }}</h1>
-    <a href="{{ url_for('admin.posts_list') }}" class="btn btn-secondary">Back to Posts</a>
-</div>
-
-<div class="row">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <h5>Total Views</h5>
-            <h2>{{ total_views }}</h2>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <h5>Avg Completion</h5>
-            <h2>{{ avg_completion }}%</h2>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <h5>Avg Read Time</h5>
-            <h2>{{ avg_time }} min</h2>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <h5>Engagement</h5>
-            <h2>{{ likes|length }} <i class="fas fa-heart text-danger"></i> {{ comments|length }} <i class="fas fa-comment text-info"></i></h2>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="stat-card">
-            <h4>Who Read This</h4>
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Last Read</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for viewer in viewers %}
-                    <tr>
-                        <td>{{ viewer.name or viewer.email }}</td>
-                        <td>{{ viewer.last_login_at.strftime('%Y-%m-%d %H:%M') if viewer.last_login_at }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<style>
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2563eb;
+        margin: 10px 0;
+    }
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    .icon-blue { background: #dbeafe; color: #2563eb; }
+    .icon-green { background: #d1fae5; color: #059669; }
+    .icon-purple { background: #e9d5ff; color: #7c3aed; }
+    .icon-red { background: #fee2e2; color: #dc2626; }
+    .icon-orange { background: #fed7aa; color: #ea580c; }
     
-    <div class="col-md-6">
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title i {
+        color: #2563eb;
+    }
+    
+    .table-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .table thead th {
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 12px 15px;
+    }
+    .table tbody tr {
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+    }
+    .table tbody tr:hover {
+        background: #f9fafb;
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+    .user-name {
+        font-weight: 600;
+        color: #111827;
+    }
+    .timestamp {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    .comment-text {
+        color: #4b5563;
+        line-height: 1.6;
+        margin-top: 5px;
+    }
+    .badge-count {
+        background: #2563eb;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9ca3af;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">{{ post.title }}</h1>
+        <p class="text-muted mb-0">Published on {{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</p>
+    </div>
+    <a href="{{ url_for('admin.posts_list') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Posts
+    </a>
+</div>
+
+<!-- Stats Cards Row -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <h4>Who Liked This</h4>
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Liked At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for like in likes %}
-                    <tr>
-                        <td>{{ like.user.name or like.user.email }}</td>
-                        <td>{{ like.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="stat-icon icon-blue">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="stat-label">Total Views</div>
+            <div class="stat-number">{{ total_views }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-label">Avg Completion</div>
+            <div class="stat-number">{{ avg_completion }}%</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-purple">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-label">Avg Read Time</div>
+            <div class="stat-number">{{ avg_time }}<span style="font-size: 1rem; color: #6b7280;"> min</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-red">
+                <i class="fas fa-heart"></i>
+            </div>
+            <div class="stat-label">Total Likes</div>
+            <div class="stat-number">{{ likes|length }}</div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
+<!-- Who Read This Table -->
+<div class="row mb-4">
     <div class="col-12">
-        <div class="stat-card">
-            <h4>Comments</h4>
-            {% for comment in comments %}
-            <div class="border-bottom pb-3 mb-3">
-                <strong>{{ comment.user.name or comment.user.email }}</strong>
-                <span class="text-muted small">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                <p class="mt-2">{{ comment.body }}</p>
+        <div class="table-container">
+            <div class="section-title">
+                <i class="fas fa-users"></i>
+                <span>Who Read This Article</span>
+                <span class="badge-count ms-auto">{{ viewers|length }}</span>
             </div>
-            {% endfor %}
+            {% if viewers %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="40%">User</th>
+                            <th width="30%">Email</th>
+                            <th width="25%">Last Read</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for viewer in viewers %}
+                        <tr>
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td>
+                                <div class="user-name">
+                                    <i class="fas fa-user-circle me-2" style="color: #9ca3af;"></i>
+                                    {{ viewer.name or 'Unknown User' }}
+                                </div>
+                            </td>
+                            <td class="text-muted">{{ viewer.email }}</td>
+                            <td class="timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                {{ viewer.last_login_at.strftime('%b %d, %Y at %I:%M %p') if viewer.last_login_at else 'Never' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p class="mb-0">No readers yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Who Liked This Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="section-title">
+                <i class="fas fa-heart"></i>
+                <span>Who Liked This Article</span>
+                <span class="badge-count ms-auto">{{ likes|length }}</span>
+            </div>
+            {% if likes %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="40%">User</th>
+                            <th width="30%">Email</th>
+                            <th width="25%">Liked At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for like in likes %}
+                        <tr>
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td>
+                                <div class="user-name">
+                                    <i class="fas fa-user-circle me-2" style="color: #dc2626;"></i>
+                                    {{ like.user.name or 'Unknown User' }}
+                                </div>
+                            </td>
+                            <td class="text-muted">{{ like.user.email }}</td>
+                            <td class="timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                {{ like.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-heart-broken"></i>
+                <p class="mb-0">No likes yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Comments Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="section-title">
+                <i class="fas fa-comments"></i>
+                <span>Comments</span>
+                <span class="badge-count ms-auto">{{ comments|length }}</span>
+            </div>
+            {% if comments %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="25%">User</th>
+                            <th width="50%">Comment</th>
+                            <th width="20%">Posted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in comments %}
+                        <tr>
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td>
+                                <div class="user-name">
+                                    <i class="fas fa-user-circle me-2" style="color: #2563eb;"></i>
+                                    {{ comment.user.name or 'Unknown User' }}
+                                </div>
+                                <small class="text-muted d-block mt-1">{{ comment.user.email }}</small>
+                            </td>
+                            <td>
+                                <div class="comment-text">{{ comment.body }}</div>
+                            </td>
+                            <td class="timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                {{ comment.created_at.strftime('%b %d, %Y') }}<br>
+                                <small class="text-muted">{{ comment.created_at.strftime('%I:%M %p') }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-comment-slash"></i>
+                <p class="mb-0">No comments yet</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

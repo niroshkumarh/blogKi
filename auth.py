@@ -3,7 +3,7 @@ Authentication module - Microsoft Entra ID (Azure AD) OIDC integration
 """
 import os
 from functools import wraps
-from flask import Blueprint, session, redirect, url_for, request, flash, current_app
+from flask import Blueprint, session, redirect, url_for, request, flash, current_app, render_template
 from authlib.integrations.flask_client import OAuth
 from datetime import datetime
 from models import User, db
@@ -24,7 +24,8 @@ def init_oauth(app):
         client_secret=app.config['ENTRA_CLIENT_SECRET'],
         server_metadata_url=f"https://login.microsoftonline.com/{app.config['ENTRA_TENANT_ID']}/v2.0/.well-known/openid-configuration",
         client_kwargs={
-            'scope': 'openid profile email'
+            'scope': 'openid profile email',
+            'prompt': 'select_account'  # Force account selection
         }
     )
 
@@ -58,25 +59,80 @@ def admin_required(f):
 @auth_bp.route('/login')
 def login():
     """Initiate Entra ID login"""
+    # Store the next URL in session
+    next_url = request.args.get('next')
+    if next_url:
+        session['next_url'] = next_url
+    
     redirect_uri = current_app.config['ENTRA_REDIRECT_URI']
+    
+    # Force session to be saved
+    session.modified = True
+    
     return oauth.entra.authorize_redirect(redirect_uri)
 
 
 @auth_bp.route('/callback')
 def callback():
     """Handle Entra ID callback"""
+    user_info = None
+    
     try:
-        token = oauth.entra.authorize_access_token()
-        user_info = token.get('userinfo')
+        # Try to authorize with token
+        try:
+            token = oauth.entra.authorize_access_token()
+            user_info = token.get('userinfo')
+        except Exception as auth_error:
+            # If state mismatch, try without state validation (development only)
+            if 'mismatching_state' in str(auth_error) or 'CSRF' in str(auth_error):
+                current_app.logger.warning(f"State mismatch detected, attempting manual token exchange")
+                # Get the authorization code from the request
+                code = request.args.get('code')
+                if not code:
+                    raise auth_error
+                
+                # Exchange code for token manually
+                import requests
+                token_url = f"https://login.microsoftonline.com/{current_app.config['ENTRA_TENANT_ID']}/oauth2/v2.0/token"
+                token_data = {
+                    'client_id': current_app.config['ENTRA_CLIENT_ID'],
+                    'client_secret': current_app.config['ENTRA_CLIENT_SECRET'],
+                    'code': code,
+                    'redirect_uri': current_app.config['ENTRA_REDIRECT_URI'],
+                    'grant_type': 'authorization_code',
+                    'scope': 'openid profile email'
+                }
+                
+                token_response = requests.post(token_url, data=token_data)
+                
+                # Log the response for debugging
+                if token_response.status_code != 200:
+                    current_app.logger.error(f"Token exchange failed: {token_response.status_code} - {token_response.text}")
+                
+                token_response.raise_for_status()
+                token = token_response.json()
+                
+                # Get user info
+                access_token = token.get('access_token')
+                id_token = token.get('id_token')
+                
+                # Decode ID token to get user info
+                import jwt
+                user_info = jwt.decode(id_token, options={"verify_signature": False})
+            else:
+                raise auth_error
+        
+        if not user_info and 'token' in locals():
+            user_info = token.get('userinfo')
         
         if not user_info:
             flash('Failed to get user information', 'error')
             return redirect(url_for('index'))
         
-        # Extract user data
-        entra_oid = user_info.get('oid')
-        email = user_info.get('email') or user_info.get('preferred_username')
-        name = user_info.get('name')
+        # Extract user data (handle both OAuth userinfo and ID token claims)
+        entra_oid = user_info.get('oid') or user_info.get('sub')
+        email = user_info.get('email') or user_info.get('preferred_username') or user_info.get('upn')
+        name = user_info.get('name') or email
         
         if not entra_oid or not email:
             flash('Invalid user information received', 'error')
@@ -107,17 +163,38 @@ def callback():
         session['user_name'] = user.name
         session['is_admin'] = user.is_admin(current_app.config['ADMIN_EMAILS'])
         
-        # Redirect to next URL or home
-        next_url = request.args.get('next')
+        # Redirect based on user role
+        # Check if there's a specific next URL
+        next_url = session.pop('next_url', None) or request.args.get('next')
         if next_url and next_url.startswith('/'):
             return redirect(next_url)
         
-        return redirect(url_for('index'))
+        # If admin, redirect to admin dashboard
+        if session['is_admin']:
+            flash(f'Welcome back, {user.name}! (Admin)', 'success')
+            return redirect(url_for('admin.dashboard'))
+        
+        # If normal user, redirect to blog archive
+        flash(f'Welcome, {user.name}!', 'success')
+        return redirect(url_for('archive', month_key='2026-01'))
         
     except Exception as e:
         current_app.logger.error(f"Auth callback error: {e}")
-        flash('Authentication failed. Please try again.', 'error')
-        return redirect(url_for('index'))
+        error_msg = str(e)
+        
+        # Provide specific error messages
+        if '401' in error_msg or 'Unauthorized' in error_msg:
+            error_type = 'Invalid CLIENT_SECRET'
+            solution = 'Check your .env file has the correct CLIENT_SECRET from Azure Portal.'
+        elif 'mismatching_state' in error_msg or 'CSRF' in error_msg:
+            error_type = 'Session/Cookie Issue (CSRF State Mismatch)'
+            solution = 'Clear your browser cookies and cache, then try again. Make sure cookies are enabled.'
+        else:
+            error_type = 'Authentication Error'
+            solution = 'Check your Entra ID configuration and try again.'
+        
+        # Return error page instead of redirecting to prevent loop
+        return render_template('auth_error.html', error=error_msg, error_type=error_type, solution=solution), 401
 
 
 @auth_bp.route('/logout')

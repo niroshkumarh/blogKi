@@ -34,7 +34,7 @@
                 <td>{{ post.published_at.strftime('%Y-%m-%d %H:%M') if post.published_at else '-' }}</td>
                 <td>
                     <a href="{{ url_for('post_detail', slug=post.slug) }}" class="btn btn-sm btn-secondary" target="_blank">View</a>
-                    <a href="{{ url_for('admin.post_stats', post_id=post.id') }}" class="btn btn-sm btn-info">Stats</a>
+                    <a href="{{ url_for('admin.post_stats', post_id=post.id) }}" class="btn btn-sm btn-info">Stats</a>
                     <a href="{{ url_for('admin.post_edit', post_id=post.id) }}" class="btn btn-sm btn-primary">Edit</a>
                     <form method="POST" action="{{ url_for('admin.post_delete', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>

@@ -93,19 +93,19 @@ def migrate_posts():
         if not existing1:
             post1 = Post(**post1_data)
             db.session.add(post1)
-            print(f"✓ Created post: {post1_data['title']}")
+            print(f"[OK] Created post: {post1_data['title']}")
         else:
-            print(f"- Post already exists: {post1_data['title']}")
+            print(f"[SKIP] Post already exists: {post1_data['title']}")
         
         if not existing2:
             post2 = Post(**post2_data)
             db.session.add(post2)
-            print(f"✓ Created post: {post2_data['title']}")
+            print(f"[OK] Created post: {post2_data['title']}")
         else:
-            print(f"- Post already exists: {post2_data['title']}")
+            print(f"[SKIP] Post already exists: {post2_data['title']}")
         
         db.session.commit()
-        print("\n✓ Migration complete!")
+        print("\n[SUCCESS] Migration complete!")
 
 
 if __name__ == '__main__':

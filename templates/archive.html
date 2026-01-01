@@ -1,36 +1,67 @@
 {% extends "base.html" %}
 
-{% block title %}Archive {{ month_key }} | Wide Angle{% endblock %}
+{% block title %}Wide Angle | Reflections and Conversations{% endblock %}
+{% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}
 
 {% block content %}
-<div class="archive-header pt-50 text-center">
-    <div class="container">
-        <h2 class="font-weight-900">Wide Angle</h2>
-        <div class="breadcrumb">
-            <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
-            <span></span> {{ month_key or 'All Posts' }}
+<!-- Start Main content -->
+<main>
+    <!--archive header-->
+    <div class="archive-header pt-50 text-center">
+        <div class="container">
+            <h2 class="font-weight-900">Wide Angle</h2>
+            <div class="breadcrumb">
+                <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
+                <span></span> {% if month_key %}{{ month_key|format_month }}{% else %}All Posts{% endif %}
+            </div>
+            <div class="bt-1 border-color-1 mt-30 mb-50"></div>
         </div>
-        <div class="bt-1 border-color-1 mt-30 mb-50"></div>
     </div>
-</div>
-
-<div class="container">
-    <div class="loop-grid mb-30">
-        <div class="row">
-            {% if posts %}
+    
+    <div class="container">
+        <div class="loop-grid mb-30">
+            <div class="row">
+                {% if posts|length > 0 %}
+                <!-- Featured Carousel -->
+                <div class="col-lg-8 mb-30">
+                    <div class="carausel-post-1 hover-up border-radius-10 overflow-hidden transition-normal position-relative wow fadeInUp animated">
+                        <div class="arrow-cover"></div>
+                        <div class="slide-fade">
+                            {% for post in featured_posts %}
+                            <div class="position-relative post-thumb">
+                                <div class="thumb-overlay img-hover-slide position-relative" style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-1.jpg') }})">
+                                    <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}"></a>
+                                    <span class="top-left-icon bg-warning"><i class="elegant-icon icon_star_alt"></i></span>
+                                    <div class="post-content-overlay text-white ml-30 mr-30 pb-30">
+                                        <div class="entry-meta meta-0 font-small mb-20">
+                                            <a href="#"><span class="post-cat text-info text-uppercase">⭐ Featured</span></a>
+                                        </div>
+                                        <h3 class="post-title font-weight-900 mb-20">
+                                            <a class="text-white" href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                                        </h3>
+                                        <div class="entry-meta meta-1 font-small text-white mt-10 pr-5 pl-5">
+                                            <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
+                                            <span class="hit-count has-dot">{{ post.excerpt or 'Wide Angle' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Post Grid Cards -->
                 {% for post in posts %}
-                <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated">
+                <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated" {% if loop.index > 2 %}data-wow-delay="{{ (loop.index - 2) * 0.2 }}s"{% endif %}>
                     <div class="post-card-1 border-radius-10 hover-up">
-                        <div class="post-thumb thumb-overlay img-hover-slide position-relative" 
-                             style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-1.jpg') }})">
+                        <div class="post-thumb thumb-overlay img-hover-slide position-relative" style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }})">
                             <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}"></a>
-                            <span class="top-right-icon bg-warning"><i class="elegant-icon icon_star_alt"></i></span>
+                            <span class="top-right-icon bg-{% if loop.index == 1 %}warning{% else %}success{% endif %}"><i class="elegant-icon icon_star_alt"></i></span>
                         </div>
                         <div class="post-content p-30">
                             <div class="entry-meta meta-0 font-small mb-10">
-                                {% if post.category %}
-                                <a href="#"><span class="post-cat text-warning">{{ post.category }}</span></a>
-                                {% endif %}
+                                <a href="#"><span class="post-cat text-{% if loop.index == 1 %}warning{% else %}success{% endif %}">{{ post.category or 'Article' }}</span></a>
                             </div>
                             <div class="d-flex post-card-content">
                                 <h5 class="post-title mb-20 font-weight-900">
@@ -48,14 +79,57 @@
                     </div>
                 </article>
                 {% endfor %}
-            {% else %}
+                {% else %}
                 <div class="col-12 text-center mt-50 mb-50">
                     <h3>No posts available yet</h3>
                     <p class="text-muted">Check back soon for new content!</p>
                 </div>
-            {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+<!-- End Main content -->
+
+<!--site-bottom-->
+{% if posts|length > 0 %}
+<div class="site-bottom pt-50 pb-50">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 col-md-6">
+                <div class="sidebar-widget widget-latest-posts mb-30 wow fadeInUp animated">
+                    <div class="widget-header-2 position-relative mb-30">
+                        <h5 class="mt-5 mb-30">Popular Posts</h5>
+                    </div>
+                    <div class="post-block-list post-module-1">
+                        <ul class="list-post">
+                            {% for post in posts[:2] %}
+                            <li class="mb-30">
+                                <div class="d-flex hover-up-2 transition-normal">
+                                    <div class="post-thumb post-thumb-80 d-flex mr-15 border-radius-5 img-hover-scale overflow-hidden">
+                                        <a class="color-white" href="{{ url_for('post_detail', slug=post.slug) }}">
+                                            <img src="{{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }}" alt="{{ post.title }}">
+                                        </a>
+                                    </div>
+                                    <div class="post-content media-body">
+                                        <h6 class="post-title mb-15 text-limit-2-row font-medium"><a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a></h6>
+                                        <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                                            <span class="post-on">{{ post.published_at.strftime('%B %d') if post.published_at }}</span>
+                                            {% if post.read_time %}
+                                            <span class="post-by has-dot">{{ post.read_time }} mins read</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endif %}
+<!--end site-bottom-->
 {% endblock %}
-

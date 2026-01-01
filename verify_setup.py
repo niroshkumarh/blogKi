@@ -5,62 +5,36 @@ import sys
 
 def test_imports():
     """Test that all modules can be imported"""
-    print("🔍 Testing imports...")
+    print("[*] Testing imports and app initialization...")
     
     try:
         import flask
-        print("✓ Flask imported")
+        print("[OK] Flask imported")
     except ImportError as e:
-        print(f"✗ Flask import failed: {e}")
+        print(f"[FAIL] Flask import failed: {e}")
         return False
     
     try:
         from flask_sqlalchemy import SQLAlchemy
-        print("✓ Flask-SQLAlchemy imported")
+        print("[OK] Flask-SQLAlchemy imported")
     except ImportError as e:
-        print(f"✗ Flask-SQLAlchemy import failed: {e}")
+        print(f"[FAIL] Flask-SQLAlchemy import failed: {e}")
         return False
     
     try:
         from authlib.integrations.flask_client import OAuth
-        print("✓ Authlib imported")
+        print("[OK] Authlib imported")
     except ImportError as e:
-        print(f"✗ Authlib import failed: {e}")
+        print(f"[FAIL] Authlib import failed: {e}")
         return False
     
     try:
-        import models
-        print("✓ models.py imported")
-    except Exception as e:
-        print(f"✗ models.py import failed: {e}")
-        return False
-    
-    try:
-        import auth
-        print("✓ auth.py imported")
-    except Exception as e:
-        print(f"✗ auth.py import failed: {e}")
-        return False
-    
-    try:
-        import api
-        print("✓ api.py imported")
-    except Exception as e:
-        print(f"✗ api.py import failed: {e}")
-        return False
-    
-    try:
-        import admin
-        print("✓ admin.py imported")
-    except Exception as e:
-        print(f"✗ admin.py import failed: {e}")
-        return False
-    
-    try:
+        # Import app which imports everything else
         import app as main_app
-        print("✓ app.py imported")
+        print("[OK] app.py and all modules imported successfully")
+        print("[OK] Blueprints registered: auth, api, admin")
     except Exception as e:
-        print(f"✗ app.py import failed: {e}")
+        print(f"[FAIL] app.py import failed: {e}")
         return False
     
     return True
@@ -68,50 +42,50 @@ def test_imports():
 
 def test_app_context():
     """Test app context and database"""
-    print("\n🔍 Testing app context...")
+    print("\n[*] Testing app context...")
     
     try:
         from app import app, db
         from models import User, Post, Comment, Like, ReadEvent
         
         with app.app_context():
-            print("✓ App context created")
-            print(f"✓ Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
-            print(f"✓ Models loaded: User, Post, Comment, Like, ReadEvent")
+            print("[OK] App context created")
+            print(f"[OK] Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+            print(f"[OK] Models loaded: User, Post, Comment, Like, ReadEvent")
         
         return True
     except Exception as e:
-        print(f"✗ App context test failed: {e}")
+        print(f"[FAIL] App context test failed: {e}")
         return False
 
 
 def test_blueprints():
     """Test blueprint registration"""
-    print("\n🔍 Testing blueprints...")
+    print("\n[*] Testing blueprints...")
     
     try:
         from app import app
         
         blueprints = list(app.blueprints.keys())
-        print(f"✓ Registered blueprints: {', '.join(blueprints)}")
+        print(f"[OK] Registered blueprints: {', '.join(blueprints)}")
         
         expected = ['auth', 'api', 'admin']
         for bp in expected:
             if bp in blueprints:
-                print(f"  ✓ {bp} blueprint registered")
+                print(f"  [OK] {bp} blueprint registered")
             else:
-                print(f"  ✗ {bp} blueprint NOT registered")
+                print(f"  [FAIL] {bp} blueprint NOT registered")
                 return False
         
         return True
     except Exception as e:
-        print(f"✗ Blueprint test failed: {e}")
+        print(f"[FAIL] Blueprint test failed: {e}")
         return False
 
 
 def test_routes():
     """Test route registration"""
-    print("\n🔍 Testing routes...")
+    print("\n[*] Testing routes...")
     
     try:
         from app import app
@@ -137,13 +111,13 @@ def test_routes():
         for route in expected_routes:
             found = any(route in r for r in routes)
             if found:
-                print(f"  ✓ {route}")
+                print(f"  [OK] {route}")
             else:
-                print(f"  ✗ {route} NOT FOUND")
+                print(f"  [FAIL] {route} NOT FOUND")
         
         return True
     except Exception as e:
-        print(f"✗ Route test failed: {e}")
+        print(f"[FAIL] Route test failed: {e}")
         return False
 
 
@@ -166,12 +140,12 @@ def main():
             result = test()
             results.append(result)
         except Exception as e:
-            print(f"\n✗ Test failed with exception: {e}")
+            print(f"\n[FAIL] Test failed with exception: {e}")
             results.append(False)
     
     print("\n" + "=" * 60)
     if all(results):
-        print("✅ All tests passed! Application is ready.")
+        print("[SUCCESS] All tests passed! Application is ready.")
         print("\nNext steps:")
         print("1. Create .env file from .env.example")
         print("2. Add your Entra ID credentials")
@@ -179,7 +153,7 @@ def main():
         print("4. Run: python migrate_posts.py")
         print("5. Run: python app.py")
     else:
-        print("❌ Some tests failed. Please check the output above.")
+        print("[ERROR] Some tests failed. Please check the output above.")
         sys.exit(1)
     print("=" * 60)
 

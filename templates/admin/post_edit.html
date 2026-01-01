@@ -6,6 +6,12 @@
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 <style>
     #editor { min-height: 400px; }
+    
+    /* Make embedded videos responsive */
+    .ql-video {
+        width: 100%;
+        height: 400px;
+    }
 </style>
 {% endblock %}
 
@@ -96,19 +102,67 @@
                         <input type="number" class="form-control" id="read_time" name="read_time" 
                                value="{{ post.read_time if post else 5 }}" min="1">
                     </div>
+                    
+                    <div class="form-group">
+                        <label>Related Posts <small class="text-muted">(Hold Ctrl/Cmd to select multiple)</small></label>
+                        <select class="form-control" id="related_posts" name="related_posts" multiple size="5">
+                            {% for p in all_posts %}
+                            {% if not post or p.id != post.id %}
+                            <option value="{{ p.slug }}" 
+                                {% if post and post.related_posts_json and p.slug in post.related_posts_json %}selected{% endif %}>
+                                {{ p.title }} ({{ p.month_key }})
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Select posts to show as related content at the bottom of this post.</small>
+                    </div>
                 </div>
             </div>
             
             <div class="card mb-4">
                 <div class="card-header">Hero Image</div>
                 <div class="card-body">
-                    {% if post and post.hero_image_path %}
-                    <img src="{{ post.hero_image_path }}" class="img-fluid mb-2" alt="Current hero image">
-                    {% endif %}
+                    <div id="hero-image-preview" class="mb-3">
+                        {% if post and post.hero_image_path %}
+                        <img src="{{ post.hero_image_path }}" class="img-fluid mb-2" alt="Current hero image" style="max-width: 100%; max-height: 300px;">
+                        {% else %}
+                        <div class="text-muted text-center py-5 border" style="background: #f8f9fa;">
+                            <i class="fas fa-image fa-3x mb-2"></i>
+                            <p>No hero image selected</p>
+                        </div>
+                        {% endif %}
+                    </div>
                     <div class="form-group">
                         <label for="hero_image">Upload New Image</label>
                         <input type="file" class="form-control-file" id="hero_image" name="hero_image" accept="image/*">
+                        <small class="form-text text-muted">
+                            Recommended size: 1200x600px. Max 16MB. Supports: JPG, PNG, GIF, WEBP
+                        </small>
                     </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-images"></i> Image Gallery
+                    <small class="text-muted">(Insert images into content)</small>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="content_images">Upload Multiple Images</label>
+                        <input type="file" class="form-control-file" id="content_images" multiple accept="image/*">
+                        <small class="form-text text-muted">
+                            Select multiple images to upload. These can be inserted into your post content.
+                        </small>
+                    </div>
+                    <div id="upload-progress" class="mt-2" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Uploading images...</small>
+                    </div>
+                    <div id="uploaded-images" class="row mt-3"></div>
                 </div>
             </div>
         </div>
@@ -118,20 +172,28 @@
 
 {% block extra_js %}
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script>
-// Initialize Quill editor
+// Initialize Quill editor with better image support and video embedding
 var quill = new Quill('#editor', {
     theme: 'snow',
     modules: {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            ['link', 'image'],
-            ['clean']
-        ]
+        toolbar: {
+            container: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'align': [] }],
+                ['link', 'image', 'video'],
+                ['clean']
+            ],
+            handlers: {
+                'image': imageHandler,
+                'video': videoHandler
+            }
+        }
     }
 });
 
@@ -146,8 +208,47 @@ $('#title').on('blur', function() {
     }
 });
 
+// Hero image preview
+$('#hero_image').on('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#hero-image-preview').html(`
+                <img src="${e.target.result}" class="img-fluid mb-2" alt="Hero image preview" style="max-width: 100%; max-height: 300px;">
+                <p class="text-success"><small><i class="fas fa-check-circle"></i> Image ready to upload (will be saved when you submit the form)</small></p>
+            `);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Video embed handler (YouTube, Vimeo, etc.)
+function videoHandler() {
+    const url = prompt('Enter YouTube or Vimeo video URL:');
+    if (!url) return;
+    
+    let embedUrl = url;
+    
+    // Convert YouTube URLs to embed format
+    if (url.includes('youtube.com/watch?v=')) {
+        const videoId = url.split('v=')[1].split('&')[0];
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1].split('?')[0];
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('vimeo.com/')) {
+        const videoId = url.split('vimeo.com/')[1].split('?')[0];
+        embedUrl = `https://player.vimeo.com/video/${videoId}`;
+    }
+    
+    const range = quill.getSelection(true);
+    quill.insertEmbed(range.index, 'video', embedUrl);
+    quill.setSelection(range.index + 1);
+}
+
 // Image upload handler for Quill
-quill.getModule('toolbar').addHandler('image', function() {
+function imageHandler() {
     let input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -155,6 +256,12 @@ quill.getModule('toolbar').addHandler('image', function() {
     
     input.onchange = function() {
         let file = input.files[0];
+        if (!file) return;
+        
+        // Show uploading indicator
+        let range = quill.getSelection(true);
+        quill.insertText(range.index, 'Uploading image...', 'italic', true);
+        
         let formData = new FormData();
         formData.append('image', file);
         
@@ -165,14 +272,94 @@ quill.getModule('toolbar').addHandler('image', function() {
             processData: false,
             contentType: false,
             success: function(data) {
-                let range = quill.getSelection();
+                // Remove "Uploading..." text
+                quill.deleteText(range.index, 'Uploading image...'.length);
+                // Insert image
                 quill.insertEmbed(range.index, 'image', data.url);
+                // Move cursor after image
+                quill.setSelection(range.index + 1);
             },
-            error: function() {
-                alert('Image upload failed');
+            error: function(xhr) {
+                // Remove "Uploading..." text
+                quill.deleteText(range.index, 'Uploading image...'.length);
+                alert('Image upload failed: ' + (xhr.responseJSON?.error || 'Unknown error'));
             }
         });
     };
+}
+
+// Multiple image upload handler
+$('#content_images').on('change', function(e) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    $('#upload-progress').show();
+    let uploadedCount = 0;
+    const totalFiles = files.length;
+    
+    files.forEach((file, index) => {
+        let formData = new FormData();
+        formData.append('image', file);
+        
+        $.ajax({
+            url: '{{ url_for("admin.upload_image") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                uploadedCount++;
+                const progress = (uploadedCount / totalFiles) * 100;
+                $('#upload-progress .progress-bar').css('width', progress + '%');
+                
+                // Add thumbnail with insert button
+                $('#uploaded-images').append(`
+                    <div class="col-md-3 col-sm-4 mb-3">
+                        <div class="card">
+                            <img src="${data.url}" class="card-img-top" alt="Uploaded image">
+                            <div class="card-body p-2">
+                                <button type="button" class="btn btn-sm btn-primary btn-block insert-image" data-url="${data.url}">
+                                    <i class="fas fa-plus"></i> Insert
+                                </button>
+                                <small class="text-muted d-block mt-1 text-truncate">${file.name}</small>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                if (uploadedCount === totalFiles) {
+                    setTimeout(() => {
+                        $('#upload-progress').fadeOut();
+                    }, 1000);
+                }
+            },
+            error: function(xhr) {
+                uploadedCount++;
+                alert(`Failed to upload ${file.name}: ` + (xhr.responseJSON?.error || 'Unknown error'));
+                
+                if (uploadedCount === totalFiles) {
+                    $('#upload-progress').fadeOut();
+                }
+            }
+        });
+    });
+    
+    // Reset input
+    $(this).val('');
+});
+
+// Insert image from gallery into editor
+$(document).on('click', '.insert-image', function() {
+    const url = $(this).data('url');
+    const range = quill.getSelection(true) || { index: quill.getLength() };
+    quill.insertEmbed(range.index, 'image', url);
+    quill.setSelection(range.index + 1);
+    
+    // Visual feedback
+    $(this).html('<i class="fas fa-check"></i> Inserted').addClass('btn-success').removeClass('btn-primary');
+    setTimeout(() => {
+        $(this).html('<i class="fas fa-plus"></i> Insert').removeClass('btn-success').addClass('btn-primary');
+    }, 2000);
 });
 
 // Form submission

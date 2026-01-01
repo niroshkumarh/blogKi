@@ -1,219 +1,406 @@
 {% extends "base.html" %}
 
 {% block title %}{{ post.title }} | Wide Angle{% endblock %}
-{% block description %}{{ post.excerpt or post.title }}{% endblock %}
+{% block description %}{{ post.excerpt or 'Wide Angle' }}{% endblock %}
 
 {% block extra_css %}
 <style>
-.comments-area {
-    margin-top: 50px;
-}
-.comment-form textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-.comment-item {
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    margin-bottom: 15px;
-}
-.like-button {
-    cursor: pointer;
-    font-size: 24px;
-    transition: all 0.3s;
-}
-.like-button.liked {
-    color: #e74c3c;
-}
+    /* Responsive video embeds */
+    .entry-main-content iframe {
+        max-width: 100%;
+        width: 100%;
+        height: 450px;
+        margin: 20px 0;
+        border-radius: 8px;
+    }
+    
+    @media (max-width: 768px) {
+        .entry-main-content iframe {
+            height: 300px;
+        }
+    }
+    
+    /* Clean comment design */
+    .border-radius-5 {
+        border-radius: 8px;
+    }
+    
+    .single-comment {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .single-comment:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .comment-header strong {
+        font-size: 15px;
+        color: #2c3e50;
+    }
+    
+    .comment-body p {
+        font-size: 14px;
+    }
+    
+    /* Comment form improvements */
+    #comment-content:focus {
+        border-color: #4CAF50 !important;
+        box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.15) !important;
+        outline: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Start Main content -->
 <main class="bg-grey pb-30">
     <div class="container single-content">
         <div class="entry-header entry-header-style-1 mb-50 pt-50">
             <h1 class="entry-title mb-50 font-weight-900">
                 {{ post.title }}
             </h1>
-            <div class="entry-meta align-items-center meta-2 font-small color-muted">
-                <p class="mb-5">
-                    <span class="post-on mr-10">{{ post.published_at.strftime('%B %d, %Y at %H:%M') if post.published_at }}</span>
-                    {% if post.read_time %}
-                    <span class="time-reading has-dot mr-10">{{ post.read_time }} mins read</span>
-                    {% endif %}
-                    <span class="hit-count has-dot">{{ post.get_view_count() }} views</span>
-                </p>
+            <h4 class="mb-30 font-weight-500 text-muted">{{ post.excerpt or 'Wide Angle' }}</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="entry-meta align-items-center meta-2 font-small color-muted">
+                        <span class="mr-10"> {{ post.published_at.strftime('%B %d, %Y %I:%M %p') if post.published_at else 'Draft' }}</span>
+                        {% if post.read_time %}
+                        <span class="has-dot"> {{ post.read_time }} mins read</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6 text-right d-none d-md-inline">
+                    <!-- Likes & Comments Count -->
+                    <div class="d-inline-block mr-15">
+                        <span class="text-muted mr-10">
+                            <i class="elegant-icon icon_heart_alt mr-5"></i>
+                            <span id="like-count">{{ post.get_like_count() }}</span> likes
+                        </span>
+                        <span class="text-muted">
+                            <i class="elegant-icon icon_comment_alt mr-5"></i>
+                            <span id="comment-count">{{ post.get_comment_count() }}</span> comments
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
+        <!--end single header-->
         
+        {% if post.hero_image_path %}
+        <figure class="image mb-30 m-auto text-center border-radius-10">
+            <img class="border-radius-10" src="{{ post.hero_image_path }}" alt="{{ post.title }}">
+        </figure>
+        {% endif %}
+        
+        <!--figure-->
         <article class="entry-wraper mb-50">
-            {% if post.hero_image_path %}
-            <div class="entry-main-image mb-40">
-                <img src="{{ post.hero_image_path }}" alt="{{ post.title }}">
-            </div>
-            {% endif %}
-            
-            <div class="entry-content">
+            <div class="entry-main-content dropcap wow fadeIn animated">
                 {{ post.html_content|safe }}
             </div>
             
-            <!-- Like Section -->
+            <!-- Like Button -->
             <div class="entry-bottom mt-50 mb-30 wow fadeIn animated">
                 <div class="tags">
-                    <span class="like-button {% if user_liked %}liked{% endif %}" 
-                          id="like-btn" 
-                          data-post-id="{{ post.id }}"
-                          title="Like this post">
-                        <i class="elegant-icon {% if user_liked %}icon_heart{% else %}icon_heart_alt{% endif %}"></i>
-                        <span id="like-count">{{ like_count }}</span>
+                    {% if user_liked %}
+                    <button id="like-btn" class="btn btn-sm btn-danger mr-10" onclick="toggleLike()">
+                        <i class="elegant-icon icon_heart"></i> Unlike
+                    </button>
+                    {% else %}
+                    <button id="like-btn" class="btn btn-sm btn-outline-danger mr-10" onclick="toggleLike()">
+                        <i class="elegant-icon icon_heart_alt"></i> Like
+                    </button>
+                    {% endif %}
+                    <span class="font-small text-muted ml-10">
+                        <span id="like-count-bottom">{{ post.get_like_count() }}</span> people liked this
                     </span>
                 </div>
             </div>
         </article>
         
-        <!-- Comments Section -->
+        <!--Comments area-->
         <div class="comments-area">
             <div class="widget-header-2 position-relative mb-30">
-                <h5 class="mt-5 mb-30">Comments (<span id="comment-count">{{ comments|length }}</span>)</h5>
+                <h5 class="mt-5 mb-30">Comments (<span id="comment-count-header">{{ post.get_comment_count() }}</span>)</h5>
+                <div class="bt-1 border-color-1"></div>
             </div>
             
+            <!-- Search Comments -->
+            {% set comments_list = post.comments.all() %}
+            {% if comments_list|length > 3 %}
+            <div class="comment-search mb-30">
+                <input type="text" id="comment-search-input" class="form-control" placeholder="🔍 Search comments..." 
+                       style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px 15px;">
+            </div>
+            {% endif %}
+            
             <!-- Comment Form -->
-            <div class="comment-form mb-50">
-                <h4>Leave a Comment</h4>
-                <form id="comment-form">
+            <div class="comment-form wow fadeIn animated mb-40">
+                <h6 class="mb-20">Leave a Comment</h6>
+                <form id="comment-form" onsubmit="submitComment(event)">
                     <div class="form-group">
-                        <textarea class="form-control" id="comment-body" placeholder="Write your comment..." required></textarea>
+                        <textarea class="form-control w-100" name="comment" id="comment-content" cols="30" rows="4" 
+                                  placeholder="Share your thoughts..." required 
+                                  style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px; font-size: 14px;"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">Post Comment</button>
+                    <div class="form-group text-right">
+                        <button type="submit" class="btn btn-radius bg-primary text-white px-4 py-2">
+                            <i class="elegant-icon icon_comment_alt mr-1"></i> Post Comment
+                        </button>
+                    </div>
                 </form>
             </div>
             
             <!-- Comments List -->
-            <div id="comments-list">
-                {% for comment in comments %}
-                <div class="comment-item" data-comment-id="{{ comment.id }}">
-                    <strong>{{ comment.user.name or comment.user.email }}</strong>
-                    <span class="text-muted font-small ml-10">{{ comment.created_at.strftime('%B %d, %Y at %H:%M') }}</span>
-                    <p class="mt-10">{{ comment.body }}</p>
-                    {% if session.user_id == comment.user_id or session.is_admin %}
-                    <button class="btn btn-sm btn-danger delete-comment" data-comment-id="{{ comment.id }}">Delete</button>
-                    {% endif %}
+            <div class="comment-list" id="comments-list">
+                {% for comment in comments_list|reverse %}
+                <div class="single-comment mb-20 p-3 border-radius-5 comment-item" style="background: #f8f9fa; border-left: 3px solid #4CAF50;" 
+                     data-comment-text="{{ comment.body|lower }} {{ comment.user.name|lower }}">
+                    <div class="comment-header mb-2">
+                        <strong class="text-brand">{{ comment.user.name }}</strong>
+                        <span class="text-muted font-xs ml-2">• {{ comment.created_at.strftime('%b %d, %Y') if comment.created_at else 'Just now' }}</span>
+                    </div>
+                    <div class="comment-body">
+                        <p class="mb-0" style="color: #333; line-height: 1.6;">{{ comment.body }}</p>
+                    </div>
                 </div>
+                {% endfor %}
+                {% if comments_list|length == 0 %}
+                <p class="text-muted text-center py-30" id="no-comments-msg">No comments yet. Be the first to share your thoughts!</p>
+                {% endif %}
+            </div>
+            
+            <!-- Load More Button -->
+            {% if comments_list|length > 5 %}
+            <div class="text-center mt-30 mb-30" id="load-more-container">
+                <button class="btn btn-outline-primary btn-sm px-4" id="load-more-btn">
+                    <i class="elegant-icon icon_plus mr-1"></i> Load More Comments
+                </button>
+                <p class="text-muted font-xs mt-2">
+                    Showing <span id="shown-count">5</span> of <span id="total-count">{{ comments_list|length }}</span> comments
+                </p>
+            </div>
+            {% endif %}
+            
+            <div class="text-center" id="no-results-msg" style="display: none;">
+                <p class="text-muted py-20">No comments found matching your search.</p>
+            </div>
+        </div>
+        <!--end comments area-->
+        
+        <!-- Related Posts Section -->
+        {% set related_posts = post.get_related_posts() %}
+        {% if related_posts|length > 0 %}
+        <div class="related-posts mt-50">
+            <div class="widget-header-2 position-relative mb-30">
+                <h5 class="mt-5 mb-30">Related Posts</h5>
+                <div class="bt-1 border-color-1"></div>
+            </div>
+            <div class="row">
+                {% for related in related_posts %}
+                <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated">
+                    <div class="post-card-1 border-radius-10 hover-up">
+                        <div class="post-thumb thumb-overlay img-hover-slide position-relative" style="background-image: url({{ related.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }})">
+                            <a class="img-link" href="{{ url_for('post_detail', slug=related.slug) }}"></a>
+                        </div>
+                        <div class="post-content p-30">
+                            <div class="entry-meta meta-0 font-small mb-10">
+                                <span class="post-cat text-success">{{ related.category or 'Article' }}</span>
+                            </div>
+                            <div class="d-flex post-card-content">
+                                <h6 class="post-title mb-20 font-weight-900">
+                                    <a href="{{ url_for('post_detail', slug=related.slug) }}">{{ related.title }}</a>
+                                </h6>
+                                <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                                    <span class="post-on">{{ related.published_at.strftime('%B %d, %Y') if related.published_at }}</span>
+                                    {% if related.read_time %}
+                                    <span class="time-reading has-dot">{{ related.read_time }} mins read</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
+        <!--end related posts-->
     </div>
 </main>
-{% endblock %}
+<!-- End Main content -->
 
-{% block extra_js %}
 <script>
-let postId = {{ post.id }};
-let readStartTime = Date.now();
-let maxScroll = 0;
-
-// Track reading progress
-function trackReadProgress() {
-    let scrollTop = $(window).scrollTop();
-    let docHeight = $(document).height();
-    let winHeight = $(window).height();
-    let scrollPercent = Math.round((scrollTop / (docHeight - winHeight)) * 100);
-    
-    maxScroll = Math.max(maxScroll, scrollPercent);
-    
-    let timeSpent = Math.round((Date.now() - readStartTime) / 1000);
-    
-    // Send event every 30 seconds or on scroll milestone
-    if (timeSpent % 30 === 0 || maxScroll % 25 === 0) {
-        $.ajax({
-            url: `/api/read-event/${postId}`,
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                percent: maxScroll,
-                seconds: timeSpent
-            })
-        });
-    }
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-$(window).scroll(trackReadProgress);
-setInterval(trackReadProgress, 30000);
-
-// Like button
-$('#like-btn').click(function() {
-    $.ajax({
-        url: `/api/like/${postId}`,
+// Like/Unlike functionality
+function toggleLike() {
+    fetch('/api/like/{{ post.id }}', {
         method: 'POST',
-        success: function(data) {
-            $('#like-count').text(data.like_count);
-            if (data.liked) {
-                $('#like-btn').addClass('liked').find('i').removeClass('icon_heart_alt').addClass('icon_heart');
-            } else {
-                $('#like-btn').removeClass('liked').find('i').removeClass('icon_heart').addClass('icon_heart_alt');
-            }
+        headers: {
+            'Content-Type': 'application/json',
         },
-        error: function() {
-            alert('Failed to like post');
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update like count
+            document.getElementById('like-count').textContent = data.like_count;
+            document.getElementById('like-count-bottom').textContent = data.like_count;
+            
+            // Update button
+            const btn = document.getElementById('like-btn');
+            if (data.liked) {
+                btn.className = 'btn btn-sm btn-danger mr-10';
+                btn.innerHTML = '<i class="elegant-icon icon_heart"></i> Unlike';
+            } else {
+                btn.className = 'btn btn-sm btn-outline-danger mr-10';
+                btn.innerHTML = '<i class="elegant-icon icon_heart_alt"></i> Like';
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update like. Please try again.');
     });
-});
+}
 
-// Comment form
-$('#comment-form').submit(function(e) {
-    e.preventDefault();
-    let body = $('#comment-body').val().trim();
+// Comment submission
+function submitComment(event) {
+    event.preventDefault();
     
-    if (!body) return;
+    const content = document.getElementById('comment-content').value;
+    if (!content.trim()) {
+        alert('Please enter a comment');
+        return;
+    }
     
-    $.ajax({
-        url: `/api/comment/${postId}`,
+    fetch('/api/comment/{{ post.id }}', {
         method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ body: body }),
-        success: function(data) {
-            // Add comment to list
-            let commentHtml = `
-                <div class="comment-item" data-comment-id="${data.comment.id}">
-                    <strong>${data.comment.user_name}</strong>
-                    <span class="text-muted font-small ml-10">Just now</span>
-                    <p class="mt-10">${data.comment.body}</p>
-                    <button class="btn btn-sm btn-danger delete-comment" data-comment-id="${data.comment.id}">Delete</button>
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear form
+            document.getElementById('comment-content').value = '';
+            
+            // Update comment count
+            const newCount = parseInt(document.getElementById('comment-count').textContent) + 1;
+            document.getElementById('comment-count').textContent = newCount;
+            document.getElementById('comment-count-header').textContent = newCount;
+            
+            // Add new comment to list
+            const commentsList = document.getElementById('comments-list');
+            const noCommentsMsg = commentsList.querySelector('.text-muted.text-center');
+            if (noCommentsMsg) {
+                noCommentsMsg.remove();
+            }
+            
+            const commentHtml = `
+                <div class="single-comment mb-20 p-3 border-radius-5 comment-item" style="background: #f8f9fa; border-left: 3px solid #4CAF50;"
+                     data-comment-text="${escapeHtml(data.comment.body).toLowerCase()} ${data.comment.user_name.toLowerCase()}">
+                    <div class="comment-header mb-2">
+                        <strong class="text-brand">${data.comment.user_name}</strong>
+                        <span class="text-muted font-xs ml-2">• Just now</span>
+                    </div>
+                    <div class="comment-body">
+                        <p class="mb-0" style="color: #333; line-height: 1.6;">${escapeHtml(data.comment.body)}</p>
+                    </div>
                 </div>
             `;
-            $('#comments-list').prepend(commentHtml);
-            $('#comment-body').val('');
-            $('#comment-count').text(parseInt($('#comment-count').text()) + 1);
-        },
-        error: function() {
-            alert('Failed to post comment');
+            commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+            
+            // Update total count in load more section
+            const newTotal = parseInt($('#total-count').text()) + 1;
+            $('#total-count').text(newTotal);
+            
+            // Show load more container if we now have more than 5 comments
+            if (newTotal > COMMENTS_PER_PAGE && !$('#load-more-container').is(':visible')) {
+                $('#load-more-container').show();
+            }
+            
+            // Hide "no comments" message if it exists
+            $('#no-comments-msg').hide();
+            
+            // Scroll to new comment
+            commentsList.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            alert(data.error || 'Failed to post comment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to post comment. Please try again.');
+    });
+}
+
+// Comment Pagination and Search
+const COMMENTS_PER_PAGE = 5;
+let visibleComments = COMMENTS_PER_PAGE;
+
+$(document).ready(function() {
+    const $comments = $('.comment-item');
+    const totalComments = $comments.length;
+    
+    // Initially hide comments beyond the first page
+    if (totalComments > COMMENTS_PER_PAGE) {
+        $comments.slice(COMMENTS_PER_PAGE).hide();
+    } else {
+        $('#load-more-container').hide();
+    }
+    
+    // Load More button click
+    $('#load-more-btn').click(function() {
+        visibleComments += COMMENTS_PER_PAGE;
+        $comments.slice(0, visibleComments).fadeIn();
+        $('#shown-count').text(Math.min(visibleComments, totalComments));
+        
+        // Hide button if all comments are shown
+        if (visibleComments >= totalComments) {
+            $('#load-more-container').fadeOut();
         }
     });
-});
-
-// Delete comment
-$(document).on('click', '.delete-comment', function() {
-    if (!confirm('Delete this comment?')) return;
     
-    let commentId = $(this).data('comment-id');
-    let $comment = $(this).closest('.comment-item');
-    
-    $.ajax({
-        url: `/api/comment/${commentId}`,
-        method: 'DELETE',
-        success: function() {
-            $comment.remove();
-            $('#comment-count').text(parseInt($('#comment-count').text()) - 1);
-        },
-        error: function() {
-            alert('Failed to delete comment');
+    // Search functionality
+    $('#comment-search-input').on('keyup', function() {
+        const searchText = $(this).val().toLowerCase().trim();
+        let foundCount = 0;
+        
+        if (searchText === '') {
+            // Reset to paginated view
+            $comments.hide();
+            visibleComments = COMMENTS_PER_PAGE;
+            $comments.slice(0, visibleComments).show();
+            $('#shown-count').text(Math.min(visibleComments, totalComments));
+            $('#load-more-container').toggle(totalComments > COMMENTS_PER_PAGE);
+            $('#no-results-msg').hide();
+        } else {
+            // Search mode - show all matching, hide pagination
+            $('#load-more-container').hide();
+            
+            $comments.each(function() {
+                const commentText = $(this).data('comment-text');
+                if (commentText.includes(searchText)) {
+                    $(this).fadeIn();
+                    foundCount++;
+                } else {
+                    $(this).hide();
+                }
+            });
+            
+            // Show no results message if nothing found
+            $('#no-results-msg').toggle(foundCount === 0);
         }
     });
 });
 </script>
 {% endblock %}
-
