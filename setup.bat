@@ -1,7 +1,7 @@
 @echo off
 REM Quick setup script for development (Windows)
 
-echo Setting up Horizon Blog...
+echo Setting up HORIZON Blog...
 
 REM Check Python version
 python --version

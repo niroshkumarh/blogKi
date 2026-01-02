@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick setup script for development
 
-echo "🚀 Setting up Horizon Blog..."
+echo "🚀 Setting up HORIZON Blog..."
 
 # Check Python version
 python_version=$(python3 --version 2>&1 | awk '{print $2}')

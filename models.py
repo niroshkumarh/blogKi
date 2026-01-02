@@ -1,5 +1,5 @@
 """
-Database models for Horizon Blog
+Database models for HORIZON Blog
 """
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
@@ -48,7 +48,7 @@ class Post(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     created_at = db.Column(db.DateTime, default=utcnow)
     status = db.Column(db.String(20), default='draft', index=True)  # draft, published
-    # is_featured = db.Column(db.Boolean, default=False, index=True)  # Featured posts shown in carousel - TEMPORARILY DISABLED
+    is_featured = db.Column(db.Boolean, default=False, index=True)  # Featured posts shown in carousel
     hero_image_path = db.Column(db.String(500))
     html_content = db.Column(db.Text)
     excerpt = db.Column(db.String(500))

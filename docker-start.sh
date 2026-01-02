@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Horizon Blog - Docker Quick Start Script
+# HORIZON Blog - Docker Quick Start Script
 
-echo "🐳 Horizon Blog - Docker Setup"
+echo "🐳 HORIZON Blog - Docker Setup"
 echo "=================================="
 echo ""
 

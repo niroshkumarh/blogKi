@@ -1,5 +1,10 @@
 """
-Initialize PostgreSQL database with correct schema
+Initialize PostgreSQL database with FRESH START (DROPS ALL DATA!)
+⚠️  WARNING: This script will DELETE ALL YOUR DATA!
+⚠️  Only use this when you want to completely reset the database!
+⚠️  For normal startup, use init_db_postgres.py instead
+
+Usage: docker exec blogki-web python init_db_postgres_FRESH.py
 """
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
@@ -8,27 +13,29 @@ import os
 from app import app, db
 from models import User, Post, Comment, Like, ReadEvent
 
-def init_database():
-    """Initialize PostgreSQL database (safe mode - preserves existing data)"""
-    print("🏗️  Checking PostgreSQL database...")
+def fresh_init_database():
+    """Initialize PostgreSQL database with FRESH START - DROPS ALL DATA!"""
+    print("⚠️  ⚠️  ⚠️  WARNING: FRESH DATABASE INITIALIZATION ⚠️  ⚠️  ⚠️")
+    print("⚠️  This will DELETE ALL DATA in the database!")
+    print("⚠️  Press Ctrl+C to cancel within 5 seconds...")
+    
+    import time
+    time.sleep(5)
+    
+    print("\n🏗️  Starting FRESH database initialization...")
     
     with app.app_context():
         try:
-            # Check if tables already exist
-            inspector = db.inspect(db.engine)
-            existing_tables = inspector.get_table_names()
+            # Drop all tables
+            print("🗑️  Dropping ALL existing tables...")
+            db.drop_all()
             
-            if existing_tables:
-                print(f"✅ Database already initialized with tables: {', '.join(existing_tables)}")
-                print("⚠️  Skipping initialization to preserve existing data")
-                return True
-            
-            # Create all tables ONLY if they don't exist
-            print("📝 Creating database tables (first time setup)...")
+            # Create all tables
+            print("📝 Creating fresh database tables...")
             db.create_all()
             
             # Create sessions table for Flask-Session
-            print("Creating sessions table for Flask-Session...")
+            print("📝 Creating sessions table...")
             from sqlalchemy import text
             with db.engine.connect() as conn:
                 conn.execute(text("""
@@ -45,15 +52,18 @@ def init_database():
             inspector = db.inspect(db.engine)
             tables = inspector.get_table_names()
             
-            print(f"\n✅ Database initialized successfully!")
+            print(f"\n✅ Fresh database initialized successfully!")
             print(f"📋 Created tables: {', '.join(tables)}")
             
-            # Show post table schema (note: SQLAlchemy creates 'post' not 'posts')
+            # Show post table schema
             if 'post' in tables:
                 columns = inspector.get_columns('post')
                 print(f"\n📝 Post table columns:")
                 for col in columns:
                     print(f"   - {col['name']} ({col['type']})")
+            
+            print("\n⚠️  All previous data has been deleted!")
+            print("💡 You can now add new posts via Admin panel")
             
             return True
             
@@ -64,6 +74,6 @@ def init_database():
             return False
 
 if __name__ == '__main__':
-    success = init_database()
+    success = fresh_init_database()
     sys.exit(0 if success else 1)
 

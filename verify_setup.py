@@ -124,7 +124,7 @@ def test_routes():
 def main():
     """Run all tests"""
     print("=" * 60)
-    print("Horizon Blog - Verification Tests")
+    print("HORIZON Blog - Verification Tests")
     print("=" * 60)
     
     tests = [

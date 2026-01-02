@@ -57,7 +57,7 @@ post2 = {
     'published_at': '2026-01-01 12:00:00',
     'status': 'published',
     'hero_image_path': '/Artcile 2.jpg',
-    'excerpt': 'Horizon',
+    'excerpt': 'HORIZON',
     'category': 'A Picture I Took',
     'read_time': 5
 }

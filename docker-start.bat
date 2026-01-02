@@ -1,8 +1,8 @@
 @echo off
-REM Horizon Blog - Docker Quick Start Script (Windows)
+REM HORIZON Blog - Docker Quick Start Script (Windows)
 
 echo.
-echo 🐳 Horizon Blog - Docker Setup
+echo 🐳 HORIZON Blog - Docker Setup
 echo ==================================
 echo.
 

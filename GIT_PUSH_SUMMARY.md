@@ -163,7 +163,7 @@ When creating your PR, use this template:
 ## 🚀 Docker, PostgreSQL & Analytics Implementation
 
 ### Overview
-This PR adds complete Docker support with PostgreSQL database and Google Analytics tracking to the Horizon blog.
+This PR adds complete Docker support with PostgreSQL database and Google Analytics tracking to the HORIZON blog.
 
 ### Major Features
 - 🐳 Docker & docker-compose setup

@@ -1,4 +1,4 @@
-# Horizon Blog - Implementation Summary
+# HORIZON Blog - Implementation Summary
 
 ## ✅ Implementation Complete
 
@@ -370,7 +370,7 @@ Run `python migrate_posts.py` to import these posts after database initializatio
 
 ## 🎉 Conclusion
 
-The Horizon Blog is now a fully functional, secure, and feature-rich Flask application. All original requirements have been implemented and tested. The codebase is well-organized, documented, and ready for deployment.
+The HORIZON Blog is now a fully functional, secure, and feature-rich Flask application. All original requirements have been implemented and tested. The codebase is well-organized, documented, and ready for deployment.
 
 **Repository:** https://github.com/niroshkumarh/blogKi
 

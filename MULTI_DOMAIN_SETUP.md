@@ -2,7 +2,7 @@
 
 Your blog is accessible via **two domains**:
 1. `https://blogs.iqubekct.ac.in`
-2. `https://horizon.kumaraguru.in`
+2. `https://HORIZON.kumaraguru.in`
 
 Both need to be configured in Azure Portal and your deployment.
 
@@ -22,7 +22,7 @@ This is **CRITICAL** - Azure must recognize both redirect URIs.
 
 ```
 https://blogs.iqubekct.ac.in/auth/callback
-https://horizon.kumaraguru.in/auth/callback
+https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 6. **Save** changes
@@ -43,10 +43,10 @@ Your `.env` file can only have **ONE** `REDIRECT_URI` at a time. You need to set
 REDIRECT_URI=https://blogs.iqubekct.ac.in/auth/callback
 ```
 
-### For horizon.kumaraguru.in:
+### For HORIZON.kumaraguru.in:
 
 ```bash
-REDIRECT_URI=https://horizon.kumaraguru.in/auth/callback
+REDIRECT_URI=https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 ---
@@ -75,18 +75,18 @@ echo "REDIRECT_URI=https://blogs.iqubekct.ac.in/auth/callback" >> .env
 docker-compose up -d
 ```
 
-### Deployment 2: horizon.kumaraguru.in
+### Deployment 2: HORIZON.kumaraguru.in
 ```bash
 # On server 2 (or different port, e.g., 4344)
-cd ~/Blog-Horizon
-echo "REDIRECT_URI=https://horizon.kumaraguru.in/auth/callback" >> .env
+cd ~/Blog-HORIZON
+echo "REDIRECT_URI=https://HORIZON.kumaraguru.in/auth/callback" >> .env
 # Update docker-compose.yml to use port 4344
 docker-compose up -d
 ```
 
 Then configure Nginx to proxy:
 - `blogs.iqubekct.ac.in` → `localhost:4343`
-- `horizon.kumaraguru.in` → `localhost:4344`
+- `HORIZON.kumaraguru.in` → `localhost:4344`
 
 ---
 
@@ -107,14 +107,14 @@ FLASK_ENV=production
 PREFERRED_URL_SCHEME=https
 ```
 
-#### For horizon.kumaraguru.in deployment:
+#### For HORIZON.kumaraguru.in deployment:
 ```bash
 DATABASE_URL=postgresql://postgres:your_password@db:5432/blogdb
 SECRET_KEY=your-secret-key
 CLIENT_ID=423dd38a-439a-4b99-a313-9472d2c0dad6
 CLIENT_SECRET=your-client-secret
 TENANT_ID=6b8b8296-bdff-4ad8-93ad-84bcbf3842f5
-REDIRECT_URI=https://horizon.kumaraguru.in/auth/callback
+REDIRECT_URI=https://HORIZON.kumaraguru.in/auth/callback
 ADMIN_EMAILS=nirosh@kct.ac.in,other@email.com
 FLASK_ENV=production
 PREFERRED_URL_SCHEME=https
@@ -143,7 +143,7 @@ I'll update `auth.py` to:
 
 - [ ] **Azure Portal**: Add both redirect URIs
   - `https://blogs.iqubekct.ac.in/auth/callback`
-  - `https://horizon.kumaraguru.in/auth/callback`
+  - `https://HORIZON.kumaraguru.in/auth/callback`
 
 - [ ] **Code Update**: Implement dynamic redirect URI detection (I'll do this)
 
@@ -163,13 +163,13 @@ curl -I https://blogs.iqubekct.ac.in/
 
 ### Test Domain 2:
 ```bash
-curl -I https://horizon.kumaraguru.in/
+curl -I https://HORIZON.kumaraguru.in/
 # Should redirect to Microsoft login
 ```
 
 ### Browser Test:
 1. Visit `https://blogs.iqubekct.ac.in/` → Login → Should work ✅
-2. Visit `https://horizon.kumaraguru.in/` → Login → Should work ✅
+2. Visit `https://HORIZON.kumaraguru.in/` → Login → Should work ✅
 
 ---
 

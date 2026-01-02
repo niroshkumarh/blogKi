@@ -67,7 +67,7 @@ Wait for: `Running on http://127.0.0.1:5000`
 ### After Login (Regular User):
 ```
 ┌─────────────────────────────────┐
-│     Horizon (Header)         │
+│     HORIZON (Header)         │
 ├─────────────────────────────────┤
 │                                 │
 │  [Featured Carousel Slider]     │

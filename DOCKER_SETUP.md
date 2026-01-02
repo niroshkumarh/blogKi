@@ -1,6 +1,6 @@
-# 🐳 Docker Setup Guide for Horizon Blog
+# 🐳 Docker Setup Guide for HORIZON Blog
 
-This guide will help you run the Horizon Blog using Docker and PostgreSQL.
+This guide will help you run the HORIZON Blog using Docker and PostgreSQL.
 
 ---
 

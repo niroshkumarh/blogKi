@@ -1,4 +1,4 @@
-# Horizon Blog - Docker Image
+# HORIZON Blog - Docker Image
 FROM python:3.12-slim
 
 # Set working directory

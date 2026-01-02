@@ -1,4 +1,4 @@
-# Horizon Blog
+# HORIZON Blog
 
 A personal blog platform with Microsoft Entra ID authentication, built with Flask and SQLite.
 

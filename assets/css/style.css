@@ -378,7 +378,7 @@ h1.page-404 {font-size: 5.2rem;}
 /*LOOP*/
 .border-top-1{border-top:1px solid rgb(225,225,225);}
 .border-bottom-1,
-.horizontal-divider{border-bottom:1px solid rgb(225,225,225);}
+.HORIZONtal-divider{border-bottom:1px solid rgb(225,225,225);}
 .border-top-2{border-top:4px double rgb(225,225,225);}
 .vertical-divider{overflow:hidden;position:relative;}
 .vertical-divider > [class*="col-"]:nth-child(n + 2)::after{content:"";background-color:rgb(225,225,225);position:absolute;top:0;bottom:0;}

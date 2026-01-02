@@ -832,7 +832,7 @@
             }
           }
         }
-        // if deltaX && horizontal scrollable
+        // if deltaX && HORIZONtal scrollable
         if (deltaX && style.overflowX.match(/(scroll|auto)/)) {
           var maxScrollLeft = cursor.scrollWidth - cursor.clientWidth;
           if (maxScrollLeft > 0) {
@@ -862,7 +862,7 @@
 
       var shouldPrevent = false;
       if (!i.settings.useBothWheelAxes) {
-        // deltaX will only be used for horizontal scrolling and deltaY will
+        // deltaX will only be used for HORIZONtal scrolling and deltaY will
         // only be used for vertical scrolling - this is the default
         element.scrollTop -= deltaY * i.settings.wheelSpeed;
         element.scrollLeft += deltaX * i.settings.wheelSpeed;
@@ -876,8 +876,8 @@
         }
         shouldPrevent = true;
       } else if (i.scrollbarXActive && !i.scrollbarYActive) {
-        // useBothWheelAxes and only horizontal bar is active, so use both
-        // wheel axes for horizontal bar
+        // useBothWheelAxes and only HORIZONtal bar is active, so use both
+        // wheel axes for HORIZONtal bar
         if (deltaX) {
           element.scrollLeft += deltaX * i.settings.wheelSpeed;
         } else {
@@ -1020,7 +1020,7 @@
             }
           }
         }
-        // if deltaX && horizontal scrollable
+        // if deltaX && HORIZONtal scrollable
         if (deltaX && style.overflowX.match(/(scroll|auto)/)) {
           var maxScrollLeft = cursor.scrollWidth - cursor.clientWidth;
           if (maxScrollLeft > 0) {

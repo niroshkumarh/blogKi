@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Horizon | Reflections and Conversations{% endblock %}
+{% block title %}HORIZON | Reflections and Conversations{% endblock %}
 {% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
     <!--archive header-->
     <div class="archive-header pt-50 text-center">
         <div class="container">
-            <h2 class="font-weight-900">Horizon</h2>
+            <h2 class="font-weight-900 HORIZON-brand">HORIZON</h2>
             <div class="breadcrumb">
                 <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
                 <span></span> {% if month_key %}{{ month_key|format_month }}{% else %}All Posts{% endif %}
@@ -22,7 +22,9 @@
         <div class="loop-grid mb-30">
             <div class="row">
                 {% if posts|length > 0 %}
-                <!-- Featured Carousel -->
+                
+                {% if featured_posts|length > 0 %}
+                <!-- Featured Carousel - Only shows if featured posts exist -->
                 <div class="col-lg-8 mb-30">
                     <div class="carausel-post-1 hover-up border-radius-10 overflow-hidden transition-normal position-relative wow fadeInUp animated">
                         <div class="arrow-cover"></div>
@@ -41,7 +43,7 @@
                                         </h3>
                                         <div class="entry-meta meta-1 font-small text-white mt-10 pr-5 pl-5">
                                             <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
-                                            <span class="hit-count has-dot">{{ post.excerpt or 'Horizon' }}</span>
+                                            <span class="hit-count has-dot">{{ post.excerpt or 'HORIZON' }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -50,6 +52,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 
                 <!-- Post Grid Cards -->
                 {% for post in posts %}
@@ -132,4 +135,35 @@
 </div>
 {% endif %}
 <!--end site-bottom-->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ========================================
+// AUTO-SCROLL FEATURED CAROUSEL
+// ========================================
+
+$(document).ready(function() {
+    // Only initialize if featured carousel exists
+    if ($('.slide-fade').length > 0) {
+        $('.slide-fade').slick({
+            dots: true,
+            infinite: true,
+            speed: 800,
+            fade: true,
+            cssEase: 'ease-in-out',
+            autoplay: true,
+            autoplaySpeed: 5000,  // 5 seconds per slide
+            arrows: true,
+            pauseOnHover: true,
+            pauseOnFocus: true,
+            adaptiveHeight: true
+        });
+        
+        console.log('✅ Featured carousel initialized with auto-scroll');
+    } else {
+        console.log('ℹ️ No featured posts - carousel skipped');
+    }
+});
+</script>
 {% endblock %}

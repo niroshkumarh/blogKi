@@ -31,7 +31,7 @@ https://blogs.iqubekct.ac.in/auth/callback
 ```
 
 ```
-https://horizon.kumaraguru.in/auth/callback
+https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 ### 4. Configure Additional Settings
@@ -58,7 +58,7 @@ After saving, you should see:
 **Platform configurations → Web:**
 - Redirect URIs: **2**
   - `https://blogs.iqubekct.ac.in/auth/callback`
-  - `https://horizon.kumaraguru.in/auth/callback`
+  - `https://HORIZON.kumaraguru.in/auth/callback`
 
 ---
 
@@ -66,7 +66,7 @@ After saving, you should see:
 
 Once configured:
 - ✅ Users visiting **blogs.iqubekct.ac.in** can log in
-- ✅ Users visiting **horizon.kumaraguru.in** can log in
+- ✅ Users visiting **HORIZON.kumaraguru.in** can log in
 - ✅ No more "redirect_uri_mismatch" errors
 - ✅ No more "400 Bad Request" errors
 
@@ -86,7 +86,7 @@ Azure Portal → Entra ID → App registrations → Your App → Authentication
 │   Redirect URIs: 2                                           │
 │                                                              │
 │   • https://blogs.iqubekct.ac.in/auth/callback              │
-│   • https://horizon.kumaraguru.in/auth/callback             │
+│   • https://HORIZON.kumaraguru.in/auth/callback             │
 │                                                              │
 │   [Add URI]                                                  │
 └─────────────────────────────────────────────────────────────┘
@@ -127,7 +127,7 @@ Make sure:
 1. **Deploy the updated code** (with dynamic redirect URI detection)
 2. **Test both domains:**
    - `https://blogs.iqubekct.ac.in/` → Should log in ✅
-   - `https://horizon.kumaraguru.in/` → Should log in ✅
+   - `https://HORIZON.kumaraguru.in/` → Should log in ✅
 
 ### Clear browser cache before testing:
 - Press `Ctrl+Shift+Delete`

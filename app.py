@@ -1,5 +1,5 @@
 """
-Horizon Blog - Flask Application
+HORIZON Blog - Flask Application
 Tenant-only blog with Entra ID authentication
 """
 import os
@@ -122,8 +122,8 @@ def archive(month_key):
     """Show posts for a specific month"""
     posts = Post.query.filter_by(month_key=month_key, status='published').order_by(Post.published_at.desc()).all()
     
-    # Use first 2 posts as featured for now
-    featured_posts = posts[:2]
+    # Get only posts marked as featured
+    featured_posts = Post.query.filter_by(month_key=month_key, status='published', is_featured=True).order_by(Post.published_at.desc()).limit(5).all()
     
     # Get all available months
     months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()

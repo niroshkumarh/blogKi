@@ -3,10 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{% block title %}Horizon | Reflections and Conversations{% endblock %}</title>
+    <title>{% block title %}HORIZON | Reflections and Conversations{% endblock %}</title>
     <meta name="description" content="{% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/theme/favicon.png') }}">
+    
+    <!-- Google Fonts - Anek Bold for HORIZON Branding -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@700&display=swap" rel="stylesheet">
     
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZHGBRQHS9T"></script>
@@ -22,6 +27,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    
+    <!-- HORIZON Branding Styles -->
+    <style>
+        /* Apply Anek Bold to all HORIZON branding */
+        .HORIZON-brand,
+        .logo-text,
+        h2.HORIZON-title,
+        .admin-brand {
+            font-family: 'Anek Latin', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Footer HORIZON text */
+        .footer-HORIZON {
+            font-family: 'Anek Latin', sans-serif !important;
+            font-weight: 700 !important;
+        }
+    </style>
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -59,7 +83,7 @@
             <div class="container">
                 <div class="row pt-20 pb-20">
                     <div class="col-md-3 col-xs-6">
-                        <a href="{{ url_for('index') }}"><img class="logo" src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="Horizon"></a>
+                        <a href="{{ url_for('index') }}"><img class="logo" src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON"></a>
                     </div>
                     <div class="col-md-9 col-xs-6 text-right header-top-right">
                         {% if session.user_name %}
@@ -130,7 +154,7 @@
     <footer class="pt-50 pb-20 bg-grey">
         <div class="container">
             <div class="footer-copy-right pt-30 mt-20 wow fadeInUp animated">
-                <p class="float-md-left font-small text-muted">© {{ now.year }}, Horizon | All rights reserved</p>
+                <p class="float-md-left font-small text-muted">© {{ now.year }}, <span class="footer-HORIZON">HORIZON</span> | All rights reserved</p>
             </div>
         </div>
     </footer>

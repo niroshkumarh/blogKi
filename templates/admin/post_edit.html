@@ -3,14 +3,296 @@
 {% block title %}{{ 'Edit Post' if post else 'New Post' }}{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<!-- Quill 2.0 with Snow theme -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+
 <style>
-    #editor { min-height: 400px; }
+    /* Editor Container */
+    #editor-container {
+        min-height: 500px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    #editor-container.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+        background: white;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    #editor-container.fullscreen #editor {
+        min-height: calc(100vh - 150px);
+    }
+    
+    /* Enhanced Toolbar */
+    .ql-toolbar.ql-snow {
+        background: #f8f9fa;
+        border: none;
+        border-bottom: 2px solid #e0e0e0;
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .ql-toolbar.ql-snow .ql-formats {
+        margin-right: 15px;
+    }
+    
+    .ql-toolbar.ql-snow button:hover,
+    .ql-toolbar.ql-snow button.ql-active {
+        color: #007bff !important;
+    }
+    
+    .ql-toolbar.ql-snow button:hover .ql-stroke,
+    .ql-toolbar.ql-snow button.ql-active .ql-stroke {
+        stroke: #007bff !important;
+    }
+    
+    .ql-toolbar.ql-snow button:hover .ql-fill,
+    .ql-toolbar.ql-snow button.ql-active .ql-fill {
+        fill: #007bff !important;
+    }
+    
+    /* Editor Content Area */
+    #editor {
+        min-height: 500px;
+        padding: 20px;
+        font-size: 16px;
+        line-height: 1.6;
+        border: none;
+    }
+    
+    #editor:focus {
+        outline: none;
+    }
     
     /* Make embedded videos responsive */
     .ql-video {
         width: 100%;
         height: 400px;
+        max-width: 100%;
+    }
+    
+    /* Image styling */
+    .ql-editor img {
+        max-width: 100%;
+        height: auto;
+        cursor: pointer;
+    }
+    
+    /* Table styling */
+    .ql-editor table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 20px 0;
+    }
+    
+    .ql-editor table td,
+    .ql-editor table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    .ql-editor table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    
+    /* Code block styling */
+    .ql-editor pre.ql-syntax {
+        background-color: #282c34;
+        color: #abb2bf;
+        border-radius: 5px;
+        padding: 15px;
+        overflow-x: auto;
+        font-family: 'Courier New', Consolas, monospace;
+        font-size: 14px;
+    }
+    
+    /* Custom Controls */
+    .editor-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-top: 2px solid #e0e0e0;
+    }
+    
+    .editor-stats {
+        display: flex;
+        gap: 20px;
+        font-size: 13px;
+        color: #666;
+    }
+    
+    .editor-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .editor-btn {
+        padding: 5px 12px;
+        font-size: 13px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .editor-btn:hover {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .editor-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    /* Autosave indicator */
+    .autosave-indicator {
+        font-size: 12px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        display: none;
+    }
+    
+    .autosave-indicator.saving {
+        background: #fff3cd;
+        color: #856404;
+        display: inline-block;
+    }
+    
+    .autosave-indicator.saved {
+        background: #d4edda;
+        color: #155724;
+        display: inline-block;
+    }
+    
+    /* Source view */
+    #source-view {
+        display: none;
+        min-height: 500px;
+        padding: 20px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        background: #282c34;
+        color: #abb2bf;
+        border: none;
+        resize: vertical;
+    }
+    
+    #source-view:focus {
+        outline: none;
+    }
+    
+    /* Drag and drop overlay */
+    .drop-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 123, 255, 0.1);
+        border: 3px dashed #007bff;
+        z-index: 1000;
+        pointer-events: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #007bff;
+        font-weight: bold;
+    }
+    
+    .drop-overlay.active {
+        display: flex;
+    }
+    
+    /* Custom font size dropdown */
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="8px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8px"]::before {
+        content: '8px';
+        font-size: 8px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
+        content: '10px';
+        font-size: 10px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
+        content: '12px';
+        font-size: 12px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
+        content: '14px';
+        font-size: 14px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
+        content: '16px';
+        font-size: 16px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
+        content: '18px';
+        font-size: 18px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before {
+        content: '24px';
+        font-size: 24px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="32px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before {
+        content: '32px';
+        font-size: 32px;
+    }
+    
+    .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="48px"]::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48px"]::before {
+        content: '48px';
+        font-size: 48px;
+    }
+    
+    /* Tooltips for toolbar buttons */
+    .ql-toolbar button {
+        position: relative;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .ql-toolbar.ql-snow .ql-formats {
+            margin-right: 8px;
+            margin-bottom: 5px;
+        }
+        
+        .editor-stats {
+            flex-direction: column;
+            gap: 5px;
+        }
     }
 </style>
 {% endblock %}
@@ -45,7 +327,28 @@
                     
                     <div class="form-group">
                         <label for="editor">Content *</label>
-                        <div id="editor">{{ post.html_content|safe if post else '' }}</div>
+                        <div id="editor-container">
+                            <div class="drop-overlay">
+                                <span><i class="fas fa-cloud-upload-alt"></i> Drop images here</span>
+                            </div>
+                            <div id="editor">{{ post.html_content|safe if post else '' }}</div>
+                            <textarea id="source-view" spellcheck="false"></textarea>
+                            <div class="editor-controls">
+                                <div class="editor-stats">
+                                    <span id="word-count">Words: 0</span>
+                                    <span id="char-count">Characters: 0</span>
+                                    <span class="autosave-indicator" id="autosave-status"></span>
+                                </div>
+                                <div class="editor-actions">
+                                    <button type="button" class="editor-btn" id="source-toggle" title="View HTML Source">
+                                        <i class="fas fa-code"></i> Source
+                                    </button>
+                                    <button type="button" class="editor-btn" id="fullscreen-toggle" title="Toggle Fullscreen">
+                                        <i class="fas fa-expand"></i> Fullscreen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <input type="hidden" name="html_content" id="html_content">
                     </div>
                 </div>
@@ -62,6 +365,17 @@
                             <option value="draft" {{ 'selected' if post and post.status == 'draft' else '' }}>Draft</option>
                             <option value="published" {{ 'selected' if post and post.status == 'published' else '' }}>Published</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="is_featured" name="is_featured" 
+                                   {{ 'checked' if post and post.is_featured else '' }}>
+                            <label class="custom-control-label" for="is_featured">
+                                <strong>⭐ Featured Post</strong>
+                                <br><small class="text-muted">Show in featured carousel on archive page</small>
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -171,31 +485,126 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<!-- Quill 2.0 -->
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<!-- Font Awesome -->
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
 <script>
-// Initialize Quill editor with better image support and video embedding
-var quill = new Quill('#editor', {
-    theme: 'snow',
-    modules: {
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                ['blockquote', 'code-block'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'indent': '-1'}, { 'indent': '+1' }],
-                [{ 'align': [] }],
-                ['link', 'image', 'video'],
-                ['clean']
-            ],
-            handlers: {
-                'image': imageHandler,
-                'video': videoHandler
+// ========================================
+// ENHANCED QUILL EDITOR INITIALIZATION
+// ========================================
+
+// Global quill variable
+var quill;
+
+// Wait for all libraries to load
+$(document).ready(function() {
+    // Check if Quill loaded
+    if (typeof Quill === 'undefined') {
+        console.error('Quill failed to load! Check your internet connection or ad blocker.');
+        alert('Editor failed to load. Please check your internet connection and refresh the page.');
+        return;
+    }
+
+    try {
+        // Register custom font sizes
+        var Size = Quill.import('formats/size');
+        Size.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '24px', '32px', '48px'];
+        Quill.register(Size, true);
+
+        // Initialize Quill editor with comprehensive features
+        quill = new Quill('#editor', {
+        theme: 'snow',
+        placeholder: 'Start writing your amazing content here...',
+        modules: {
+            toolbar: {
+                container: [
+                    // Text formatting
+                    [{ 'font': [] }],
+                    [{ 'size': ['8px', '10px', '12px', '14px', '16px', '18px', '24px', '32px', '48px'] }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    
+                    // Styling
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    
+                    // Blocks
+                    ['blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'align': [] }],
+                    [{ 'direction': 'rtl' }],
+                    
+                    // Media & Links
+                    ['link', 'image', 'video', 'formula'],
+                    
+                    // Clear formatting
+                    ['clean']
+                ],
+                handlers: {
+                    'image': imageHandler,
+                    'video': videoHandler
+                }
+            },
+            history: {
+                delay: 2000,
+                maxStack: 500,
+                userOnly: true
             }
         }
+        });
+
+        console.log('✅ Quill editor initialized successfully!');
+        
+        // Initialize word counter
+        updateWordCount();
+
+        // Set up event listeners after Quill is ready
+        setupEditorFeatures();
+        
+    } catch (error) {
+        console.error('Failed to initialize Quill:', error);
+        alert('Failed to initialize editor: ' + error.message + '. Please refresh the page.');
+        return;
     }
 });
+
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: '#28a745',
+        error: '#dc3545',
+        info: '#007bff',
+        warning: '#ffc107'
+    };
+    
+    const notification = $('<div>')
+        .css({
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '15px 20px',
+            background: colors[type] || colors.info,
+            color: 'white',
+            borderRadius: '5px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            zIndex: 10000,
+            maxWidth: '300px',
+            animation: 'slideInRight 0.3s ease'
+        })
+        .text(message)
+        .appendTo('body');
+    
+    setTimeout(() => {
+        notification.fadeOut(300, () => notification.remove());
+    }, 3000);
+}
 
 // Auto-generate slug from title
 $('#title').on('blur', function() {
@@ -205,6 +614,293 @@ $('#title').on('blur', function() {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
         $('#slug').val(slug);
+    }
+});
+
+// ========================================
+// WORD & CHARACTER COUNTER
+// ========================================
+
+function updateWordCount() {
+    if (!quill) return;
+    const text = quill.getText().trim();
+    const words = text === '' ? 0 : text.split(/\s+/).length;
+    const chars = text.length;
+    
+    $('#word-count').text(`Words: ${words.toLocaleString()}`);
+    $('#char-count').text(`Characters: ${chars.toLocaleString()}`);
+}
+
+// Setup editor features after Quill is initialized
+function setupEditorFeatures() {
+    // Initialize autosave tracking
+    lastSavedContent = quill.root.innerHTML;
+    
+    // Update word count on text change
+    quill.on('text-change', function(delta, oldDelta, source) {
+        updateWordCount();
+        
+        // Trigger autosave on user changes
+        if (source === 'user') {
+            clearTimeout(autosaveTimeout);
+            autosaveTimeout = setTimeout(autosave, 3000); // Save after 3 seconds of inactivity
+        }
+    });
+
+    // Initial word count
+    updateWordCount();
+    
+    // Setup paste handler for images
+    if (quill.root) {
+        quill.root.addEventListener('paste', handlePaste);
+    }
+    
+    // Autosave on title, excerpt, etc. changes
+    $('#title, #slug, #excerpt, #category, #read_time').on('input change', function() {
+        clearTimeout(autosaveTimeout);
+        autosaveTimeout = setTimeout(autosave, 3000);
+    });
+}
+
+function handlePaste(e) {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    const items = clipboardData.items;
+    
+    if (!items) return;
+    
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const file = items[i].getAsFile();
+            uploadImageToEditor(file);
+            showNotification('Image pasted! Uploading...', 'info');
+            break;
+        }
+    }
+}
+
+// ========================================
+// AUTOSAVE FUNCTIONALITY
+// ========================================
+
+let autosaveTimeout;
+let lastSavedContent = ''; // Will be initialized after Quill loads
+
+function autosave() {
+    if (!quill || !quill.root) return; // Safety check
+    const currentContent = quill.root.innerHTML;
+    
+    // Only save if content has changed
+    if (currentContent === lastSavedContent) {
+        return;
+    }
+    
+    $('#autosave-status').removeClass('saved').addClass('saving').text('💾 Saving...');
+    
+    // Save to localStorage
+    const autosaveData = {
+        title: $('#title').val(),
+        slug: $('#slug').val(),
+        excerpt: $('#excerpt').val(),
+        content: currentContent,
+        category: $('#category').val(),
+        read_time: $('#read_time').val(),
+        timestamp: new Date().toISOString()
+    };
+    
+    try {
+        localStorage.setItem('post_autosave_{{ post.id if post else "new" }}', JSON.stringify(autosaveData));
+        lastSavedContent = currentContent;
+        
+        $('#autosave-status').removeClass('saving').addClass('saved').text('✓ Saved');
+        
+        setTimeout(() => {
+            $('#autosave-status').fadeOut(300, function() {
+                $(this).removeClass('saved').text('').show();
+            });
+        }, 2000);
+    } catch (e) {
+        console.error('Autosave failed:', e);
+        $('#autosave-status').removeClass('saving').text('⚠ Save failed').css('background', '#dc3545');
+    }
+}
+
+// Autosave event listeners are now set up in setupEditorFeatures()
+
+// Load autosaved content on page load
+$(document).ready(function() {
+    const autosaveKey = 'post_autosave_{{ post.id if post else "new" }}';
+    const autosaveData = localStorage.getItem(autosaveKey);
+    
+    if (autosaveData && !{{ 'true' if post else 'false' }}) {
+        try {
+            const data = JSON.parse(autosaveData);
+            const savedTime = new Date(data.timestamp);
+            const now = new Date();
+            const hoursSinceAutosave = (now - savedTime) / (1000 * 60 * 60);
+            
+            // Only restore if autosave is less than 24 hours old
+            if (hoursSinceAutosave < 24) {
+                if (confirm(`Found autosaved content from ${savedTime.toLocaleString()}. Restore it?`)) {
+                    $('#title').val(data.title || '');
+                    $('#slug').val(data.slug || '');
+                    $('#excerpt').val(data.excerpt || '');
+                    $('#category').val(data.category || '');
+                    $('#read_time').val(data.read_time || 5);
+                    quill.root.innerHTML = data.content || '';
+                    updateWordCount();
+                    showNotification('Autosaved content restored!', 'success');
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load autosave:', e);
+        }
+    }
+});
+
+// Clear autosave on successful form submission
+$('#post-form').on('submit', function() {
+    const autosaveKey = 'post_autosave_{{ post.id if post else "new" }}';
+    localStorage.removeItem(autosaveKey);
+});
+
+// ========================================
+// FULLSCREEN MODE
+// ========================================
+
+let isFullscreen = false;
+
+$('#fullscreen-toggle').on('click', function() {
+    const container = $('#editor-container');
+    const button = $(this);
+    
+    if (!isFullscreen) {
+        container.addClass('fullscreen');
+        button.addClass('active').html('<i class="fas fa-compress"></i> Exit Fullscreen');
+        isFullscreen = true;
+        showNotification('Fullscreen mode activated. Press ESC to exit.', 'info');
+    } else {
+        container.removeClass('fullscreen');
+        button.removeClass('active').html('<i class="fas fa-expand"></i> Fullscreen');
+        isFullscreen = false;
+    }
+});
+
+// ESC key to exit fullscreen
+$(document).on('keydown', function(e) {
+    if (e.key === 'Escape' && isFullscreen) {
+        $('#fullscreen-toggle').click();
+    }
+});
+
+// ========================================
+// SOURCE CODE VIEW
+// ========================================
+
+let isSourceView = false;
+
+$('#source-toggle').on('click', function() {
+    const button = $(this);
+    
+    if (!isSourceView) {
+        // Switch to source view
+        const html = quill.root.innerHTML;
+        $('#source-view').val(formatHTML(html)).show();
+        $('#editor').hide();
+        $('.ql-toolbar').hide();
+        button.addClass('active').html('<i class="fas fa-eye"></i> Visual');
+        isSourceView = true;
+    } else {
+        // Switch back to visual editor
+        const html = $('#source-view').val();
+        quill.root.innerHTML = html;
+        $('#source-view').hide();
+        $('#editor').show();
+        $('.ql-toolbar').show();
+        button.removeClass('active').html('<i class="fas fa-code"></i> Source');
+        isSourceView = false;
+        updateWordCount();
+    }
+});
+
+// Format HTML for better readability in source view
+function formatHTML(html) {
+    // Basic HTML formatting (indent nested tags)
+    let formatted = html.replace(/></g, '>\n<');
+    return formatted;
+}
+
+// ========================================
+// DRAG AND DROP IMAGE UPLOAD
+// ========================================
+
+const editorContainer = document.getElementById('editor-container');
+const dropOverlay = editorContainer.querySelector('.drop-overlay');
+
+// Prevent default drag behaviors on the whole editor container
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    editorContainer.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Highlight drop area when dragging over it
+['dragenter', 'dragover'].forEach(eventName => {
+    editorContainer.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    editorContainer.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    dropOverlay.classList.add('active');
+}
+
+function unhighlight(e) {
+    dropOverlay.classList.remove('active');
+}
+
+// Handle dropped files
+editorContainer.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = Array.from(dt.files);
+    
+    // Filter only image files
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length > 0) {
+        imageFiles.forEach(file => uploadImageToEditor(file));
+        showNotification(`Uploading ${imageFiles.length} image(s)...`, 'info');
+    } else {
+        showNotification('Please drop image files only', 'warning');
+    }
+}
+
+// Paste handler is set up in setupEditorFeatures() to avoid accessing quill before initialization
+
+// ========================================
+// KEYBOARD SHORTCUTS
+// ========================================
+
+// Ctrl/Cmd + S to save (instead of browser save)
+$(document).on('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        autosave();
+        showNotification('Manual save triggered!', 'success');
+    }
+    
+    // Ctrl/Cmd + Shift + F for fullscreen
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        $('#fullscreen-toggle').click();
     }
 });
 
@@ -223,44 +919,63 @@ $('#hero_image').on('change', function(e) {
     }
 });
 
-// Video embed handler (YouTube, Vimeo, etc.)
-function videoHandler() {
-    const url = prompt('Enter YouTube or Vimeo video URL:');
-    if (!url) return;
-    
-    let embedUrl = url;
-    
-    // Convert YouTube URLs to embed format
-    if (url.includes('youtube.com/watch?v=')) {
-        const videoId = url.split('v=')[1].split('&')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (url.includes('youtu.be/')) {
-        const videoId = url.split('youtu.be/')[1].split('?')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (url.includes('vimeo.com/')) {
-        const videoId = url.split('vimeo.com/')[1].split('?')[0];
-        embedUrl = `https://player.vimeo.com/video/${videoId}`;
-    }
-    
-    const range = quill.getSelection(true);
-    quill.insertEmbed(range.index, 'video', embedUrl);
-    quill.setSelection(range.index + 1);
-}
+// ========================================
+// CUSTOM TOOLBAR HANDLERS
+// ========================================
 
-// Image upload handler for Quill
-function imageHandler() {
-    let input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
-    
-    input.onchange = function() {
-        let file = input.files[0];
-        if (!file) return;
+// Enhanced Video embed handler with better UI
+function videoHandler() {
+        const url = prompt('Enter video URL (YouTube, Vimeo, or direct link):');
+        if (!url) return;
         
-        // Show uploading indicator
-        let range = quill.getSelection(true);
-        quill.insertText(range.index, 'Uploading image...', 'italic', true);
+        let embedUrl = url;
+        
+        // Convert YouTube URLs to embed format
+        if (url.includes('youtube.com/watch?v=')) {
+            const videoId = url.split('v=')[1].split('&')[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        } else if (url.includes('youtu.be/')) {
+            const videoId = url.split('youtu.be/')[1].split('?')[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        } else if (url.includes('vimeo.com/')) {
+            const videoId = url.split('vimeo.com/')[1].split('?')[0];
+            embedUrl = `https://player.vimeo.com/video/${videoId}`;
+        } else if (url.includes('dailymotion.com')) {
+            const videoId = url.split('video/')[1].split('_')[0];
+            embedUrl = `https://www.dailymotion.com/embed/video/${videoId}`;
+        }
+        
+        const range = quill.getSelection(true) || { index: quill.getLength() };
+        quill.insertEmbed(range.index, 'video', embedUrl);
+        quill.setSelection(range.index + 1);
+        
+        // Show success message
+        showNotification('Video embedded successfully!', 'success');
+    }
+
+// Enhanced Image upload handler with better feedback
+function imageHandler() {
+        let input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.setAttribute('multiple', 'true');
+        input.click();
+        
+        input.onchange = function() {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+            
+            files.forEach(file => uploadImageToEditor(file));
+        };
+    }
+
+// Upload image to server and insert into editor
+function uploadImageToEditor(file) {
+        let range = quill.getSelection(true) || { index: quill.getLength() };
+        
+        // Show uploading placeholder
+        const uploadingId = 'uploading-' + Date.now() + '-' + Math.random();
+        quill.insertText(range.index, '\n📤 Uploading: ' + file.name + '...\n', 'italic', true);
         
         let formData = new FormData();
         formData.append('image', file);
@@ -272,21 +987,40 @@ function imageHandler() {
             processData: false,
             contentType: false,
             success: function(data) {
-                // Remove "Uploading..." text
-                quill.deleteText(range.index, 'Uploading image...'.length);
-                // Insert image
-                quill.insertEmbed(range.index, 'image', data.url);
-                // Move cursor after image
-                quill.setSelection(range.index + 1);
+                // Find and remove uploading text
+                const delta = quill.getContents();
+                const text = quill.getText();
+                const uploadingText = '\n📤 Uploading: ' + file.name + '...\n';
+                const startIndex = text.indexOf(uploadingText);
+                
+                if (startIndex !== -1) {
+                    quill.deleteText(startIndex, uploadingText.length);
+                    quill.insertEmbed(startIndex, 'image', data.url);
+                    quill.insertText(startIndex + 1, '\n');
+                    quill.setSelection(startIndex + 2);
+                } else {
+                    // If text not found, insert at current position
+                    const currentRange = quill.getSelection(true) || { index: quill.getLength() };
+                    quill.insertEmbed(currentRange.index, 'image', data.url);
+                    quill.setSelection(currentRange.index + 1);
+                }
+                
+                showNotification('Image uploaded successfully!', 'success');
             },
             error: function(xhr) {
-                // Remove "Uploading..." text
-                quill.deleteText(range.index, 'Uploading image...'.length);
-                alert('Image upload failed: ' + (xhr.responseJSON?.error || 'Unknown error'));
+                // Remove uploading text
+                const text = quill.getText();
+                const uploadingText = '\n📤 Uploading: ' + file.name + '...\n';
+                const startIndex = text.indexOf(uploadingText);
+                
+                if (startIndex !== -1) {
+                    quill.deleteText(startIndex, uploadingText.length);
+                }
+                
+                showNotification('Failed to upload ' + file.name + ': ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
             }
         });
-    };
-}
+    }
 
 // Multiple image upload handler
 $('#content_images').on('change', function(e) {
@@ -362,9 +1096,65 @@ $(document).on('click', '.insert-image', function() {
     }, 2000);
 });
 
-// Form submission
-$('#post-form').submit(function() {
-    $('#html_content').val(quill.root.innerHTML);
+// ========================================
+// FORM SUBMISSION
+// ========================================
+
+$('#post-form').on('submit', function(e) {
+    // Make sure we're in visual mode when submitting
+    if (isSourceView) {
+        const html = $('#source-view').val();
+        quill.root.innerHTML = html;
+    }
+    
+    // Get content from editor
+    const content = quill.root.innerHTML.trim();
+    
+    console.log('📝 Form submitting with content length:', content.length);
+    console.log('📝 Content preview:', content.substring(0, 200));
+    
+    // Validate content
+    if (content === '' || content === '<p><br></p>') {
+        e.preventDefault();
+        showNotification('Please add some content to your post!', 'error');
+        return false;
+    }
+    
+    // Set hidden field value
+    $('#html_content').val(content);
+    console.log('✅ Hidden field #html_content set with', content.length, 'characters');
+    console.log('✅ Hidden field value:', $('#html_content').val().substring(0, 200));
+    
+    // Show submitting indicator
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+    
+    // Note: The form will submit naturally, so we don't prevent default
+    // The button will re-enable when the page reloads
+    
+    return true;
+});
+
+// ========================================
+// PREVENT ACCIDENTAL PAGE LEAVE
+// ========================================
+
+let formSubmitted = false;
+
+$('#post-form').on('submit', function() {
+    formSubmitted = true;
+});
+
+window.addEventListener('beforeunload', function (e) {
+    // Don't show warning if form was submitted or content hasn't changed
+    if (formSubmitted || quill.getText().trim().length === 0) {
+        return undefined;
+    }
+    
+    const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+    e.returnValue = confirmationMessage;
+    return confirmationMessage;
 });
 </script>
 {% endblock %}

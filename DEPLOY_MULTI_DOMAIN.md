@@ -2,7 +2,7 @@
 
 Your blog supports **two domains**:
 1. **https://blogs.iqubekct.ac.in**
-2. **https://horizon.kumaraguru.in**
+2. **https://HORIZON.kumaraguru.in**
 
 ---
 
@@ -26,7 +26,7 @@ You **MUST** add both redirect URIs to Azure Portal:
 
 ```
 https://blogs.iqubekct.ac.in/auth/callback
-https://horizon.kumaraguru.in/auth/callback
+https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 4. Click **Save**
@@ -45,7 +45,7 @@ git add auth.py deploy-production.sh MULTI_DOMAIN_SETUP.md AZURE_PORTAL_SETUP.md
 git commit -m "Add multi-domain support with dynamic redirect URI detection
 
 - Updated auth.py to detect domain automatically
-- Supports blogs.iqubekct.ac.in and horizon.kumaraguru.in
+- Supports blogs.iqubekct.ac.in and HORIZON.kumaraguru.in
 - ProxyFix middleware for reverse proxy compatibility
 - Fixed datetime.utcnow() deprecation warnings"
 
@@ -93,10 +93,10 @@ docker logs -f blogki-web
 3. Should redirect to Microsoft login
 4. After login → Should see blog archive ✅
 
-### Test Domain 2: horizon.kumaraguru.in
+### Test Domain 2: HORIZON.kumaraguru.in
 
-1. **Clear browser cookies** for `horizon.kumaraguru.in`
-2. Visit: **https://horizon.kumaraguru.in/**
+1. **Clear browser cookies** for `HORIZON.kumaraguru.in`
+2. Visit: **https://HORIZON.kumaraguru.in/**
 3. Should redirect to Microsoft login
 4. After login → Should see blog archive ✅
 
@@ -106,9 +106,9 @@ docker logs -f blogki-web
 
 When a user visits your site:
 
-1. **User visits** `https://horizon.kumaraguru.in/`
+1. **User visits** `https://HORIZON.kumaraguru.in/`
 2. **App detects** domain from `X-Forwarded-Host` header (set by Nginx)
-3. **Builds redirect URI** dynamically: `https://horizon.kumaraguru.in/auth/callback`
+3. **Builds redirect URI** dynamically: `https://HORIZON.kumaraguru.in/auth/callback`
 4. **Redirects to Microsoft** with the correct callback URL
 5. **Microsoft redirects back** to the same domain
 6. **Login succeeds** ✅
@@ -153,9 +153,9 @@ server {
 
 server {
     listen 443 ssl;
-    server_name horizon.kumaraguru.in;
+    server_name HORIZON.kumaraguru.in;
     
-    # SSL certificates for horizon.kumaraguru.in
+    # SSL certificates for HORIZON.kumaraguru.in
     ssl_certificate /path/to/cert2.pem;
     ssl_certificate_key /path/to/key2.pem;
     
@@ -178,9 +178,9 @@ Deploy **TWO separate instances** with different `.env` files:
 REDIRECT_URI=https://blogs.iqubekct.ac.in/auth/callback
 ```
 
-**Server 2 (horizon.kumaraguru.in):**
+**Server 2 (HORIZON.kumaraguru.in):**
 ```bash
-REDIRECT_URI=https://horizon.kumaraguru.in/auth/callback
+REDIRECT_URI=https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 ---
@@ -246,12 +246,12 @@ curl http://localhost:4343/test
 docker logs -f blogki-web
 
 # Should see lines like:
-#   INFO: Dynamic redirect URI: https://horizon.kumaraguru.in/auth/callback
+#   INFO: Dynamic redirect URI: https://HORIZON.kumaraguru.in/auth/callback
 ```
 
 ### 6. Both Domains Work
 - [ ] `https://blogs.iqubekct.ac.in/` - Login works ✅
-- [ ] `https://horizon.kumaraguru.in/` - Login works ✅
+- [ ] `https://HORIZON.kumaraguru.in/` - Login works ✅
 
 ---
 
@@ -333,7 +333,7 @@ curl -I http://localhost:4343/auth/login?next=/
 
 # 3. Test through Nginx
 curl -I https://blogs.iqubekct.ac.in/
-curl -I https://horizon.kumaraguru.in/
+curl -I https://HORIZON.kumaraguru.in/
 
 # 4. Check environment
 docker exec blogki-web env | grep -E "(FLASK|REDIRECT|DATABASE)"

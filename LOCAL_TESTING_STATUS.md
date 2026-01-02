@@ -1,4 +1,4 @@
-# 🎉 Horizon Blog - Local Testing Status
+# 🎉 HORIZON Blog - Local Testing Status
 
 ## ✅ Completed Steps
 

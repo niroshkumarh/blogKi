@@ -78,6 +78,7 @@ def post_new():
             excerpt = request.form.get('excerpt', '').strip()
             category = request.form.get('category', '').strip()
             read_time = request.form.get('read_time', 0)
+            is_featured = request.form.get('is_featured') == 'on'  # Checkbox value
             
             # Validate required fields
             if not title or not slug or not month_key:
@@ -126,6 +127,7 @@ def post_new():
                 excerpt=excerpt,
                 category=category,
                 read_time=read_time,
+                is_featured=is_featured,
                 hero_image_path=hero_image_path,
                 published_at=published_at
             )
@@ -165,6 +167,13 @@ def post_edit(post_id):
             post.excerpt = request.form.get('excerpt', '').strip()
             post.category = request.form.get('category', '').strip()
             post.read_time = request.form.get('read_time', 0)
+            post.is_featured = request.form.get('is_featured') == 'on'  # Checkbox value
+            
+            # Debug logging
+            print(f"📝 [DEBUG] Received html_content with {len(post.html_content)} characters")
+            print(f"📝 [DEBUG] Content preview: {post.html_content[:200] if post.html_content else 'EMPTY'}")
+            print(f"📝 [DEBUG] Post title: {post.title}")
+            print(f"📝 [DEBUG] Post slug: {post.slug}")
             
             # Validate required fields
             if not post.title or not post.slug or not post.month_key:

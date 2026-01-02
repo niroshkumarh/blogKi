@@ -1,10 +1,10 @@
 #!/bin/bash
-# Production Deployment Script for Horizon Blog
+# Production Deployment Script for HORIZON Blog
 # Run this on your production server after pulling latest code
 
 set -e  # Exit on error
 
-echo "🚀 Horizon Blog - Production Deployment"
+echo "🚀 HORIZON Blog - Production Deployment"
 echo "==========================================="
 
 # Step 1: Pull latest code
@@ -39,7 +39,7 @@ if [[ ! "$CURRENT_REDIRECT" =~ ^https:// ]]; then
     echo "⚠️  WARNING: REDIRECT_URI should use HTTPS for production!"
     echo "   Supported domains:"
     echo "   - https://blogs.iqubekct.ac.in/auth/callback"
-    echo "   - https://horizon.kumaraguru.in/auth/callback"
+    echo "   - https://HORIZON.kumaraguru.in/auth/callback"
     echo "   Note: App will auto-detect domain, but this is the fallback."
 fi
 

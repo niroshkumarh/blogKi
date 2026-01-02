@@ -59,7 +59,7 @@ def admin_required(f):
 def _get_dynamic_redirect_uri():
     """
     Build redirect URI dynamically based on the incoming request domain.
-    Supports multiple domains: blogs.iqubekct.ac.in, horizon.kumaraguru.in
+    Supports multiple domains: blogs.iqubekct.ac.in, HORIZON.kumaraguru.in
     """
     # Get the scheme (http/https) - prefer https in production
     scheme = request.scheme
@@ -97,7 +97,7 @@ def login():
         session['next_url'] = next_url
     
     # Dynamic redirect URI detection for multi-domain support
-    # Supports: blogs.iqubekct.ac.in and horizon.kumaraguru.in
+    # Supports: blogs.iqubekct.ac.in and HORIZON.kumaraguru.in
     redirect_uri = _get_dynamic_redirect_uri()
     
     # Force session to be saved

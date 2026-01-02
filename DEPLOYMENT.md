@@ -1,4 +1,4 @@
-# Horizon Blog - Ubuntu Deployment Guide
+# HORIZON Blog - Ubuntu Deployment Guide
 
 ## Prerequisites
 - Ubuntu Server (20.04 LTS or later)
@@ -80,7 +80,7 @@ Create `/etc/systemd/system/blogsite.service`:
 
 ```ini
 [Unit]
-Description=Horizon Blog (Gunicorn)
+Description=HORIZON Blog (Gunicorn)
 After=network.target
 
 [Service]
