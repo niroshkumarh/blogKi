@@ -59,3 +59,4 @@ if __name__ == '__main__':
     add_featured_column()
     print("\n✅ Migration complete! You can now mark posts as featured in the admin panel.")
 
+

@@ -1,5 +1,5 @@
 """
-Wide Angle Blog - Flask Application
+Horizon Blog - Flask Application
 Tenant-only blog with Entra ID authentication
 """
 import os

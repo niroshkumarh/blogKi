@@ -57,7 +57,7 @@ post2 = {
     'published_at': '2026-01-01 12:00:00',
     'status': 'published',
     'hero_image_path': '/Artcile 2.jpg',
-    'excerpt': 'Wide Angle',
+    'excerpt': 'Horizon',
     'category': 'A Picture I Took',
     'read_time': 5
 }
@@ -147,4 +147,5 @@ print("✅ Posts migrated successfully!")
 print()
 print("You can now restart the Flask app and test:")
 print("  python app.py")
+
 

@@ -185,3 +185,4 @@ You now have full control over which posts appear in your homepage carousel. Thi
 
 **Ready to use!** 🎊
 
+

@@ -62,3 +62,4 @@ if __name__ == '__main__':
         print("❌ Migration failed. Please check errors above.")
     print("=" * 60)
 
+

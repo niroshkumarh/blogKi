@@ -34,3 +34,4 @@ conn.close()
 print()
 print("✅ Database fixed! You can now restart the Flask app.")
 
+

@@ -16,3 +16,4 @@ with app.app_context():
     print("\n4. Under 'Supported account types', it should be:")
     print("   - 'Accounts in this organizational directory only (Single tenant)'")
 
+

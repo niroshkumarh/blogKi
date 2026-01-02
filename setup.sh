@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick setup script for development
 
-echo "🚀 Setting up Wide Angle Blog..."
+echo "🚀 Setting up Horizon Blog..."
 
 # Check Python version
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
@@ -54,4 +54,5 @@ echo "  source venv/bin/activate"
 echo "  python app.py"
 echo ""
 echo "Then visit: http://localhost:5000"
+
 

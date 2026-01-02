@@ -67,7 +67,7 @@ Wait for: `Running on http://127.0.0.1:5000`
 ### After Login (Regular User):
 ```
 ┌─────────────────────────────────┐
-│     Wide Angle (Header)         │
+│     Horizon (Header)         │
 ├─────────────────────────────────┤
 │                                 │
 │  [Featured Carousel Slider]     │
@@ -183,4 +183,5 @@ Your blog is now a fully dynamic Flask application that:
 **Start testing now!** 🚀
 
 If you encounter any issues, check the console output for detailed error messages.
+
 

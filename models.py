@@ -1,5 +1,5 @@
 """
-Database models for Wide Angle Blog
+Database models for Horizon Blog
 """
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy

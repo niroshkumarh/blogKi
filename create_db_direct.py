@@ -111,3 +111,4 @@ print()
 print(f"✅ Database file size: {size} bytes")
 print(f"✅ Database location: {os.path.abspath('blogsite.db')}")
 
+

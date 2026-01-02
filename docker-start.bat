@@ -1,8 +1,8 @@
 @echo off
-REM Wide Angle Blog - Docker Quick Start Script (Windows)
+REM Horizon Blog - Docker Quick Start Script (Windows)
 
 echo.
-echo 🐳 Wide Angle Blog - Docker Setup
+echo 🐳 Horizon Blog - Docker Setup
 echo ==================================
 echo.
 
@@ -73,4 +73,5 @@ if %errorlevel% equ 0 (
 )
 
 pause
+
 

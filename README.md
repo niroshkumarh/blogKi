@@ -1,4 +1,4 @@
-# Wide Angle Blog
+# Horizon Blog
 
 A personal blog platform with Microsoft Entra ID authentication, built with Flask and SQLite.
 
@@ -156,4 +156,5 @@ Private project - all rights reserved.
 ## Contact
 
 For questions or issues, contact the admin via the configured admin email.
+
 

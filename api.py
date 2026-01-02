@@ -188,3 +188,4 @@ def get_comments(post_id):
         current_app.logger.error(f"Get comments error: {e}")
         return jsonify({'error': 'Failed to fetch comments'}), 500
 
+

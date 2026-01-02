@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Wide Angle Blog - Docker Quick Start Script
+# Horizon Blog - Docker Quick Start Script
 
-echo "🐳 Wide Angle Blog - Docker Setup"
+echo "🐳 Horizon Blog - Docker Setup"
 echo "=================================="
 echo ""
 
@@ -67,4 +67,5 @@ else
     echo "   Check the logs: docker-compose logs"
     exit 1
 fi
+
 

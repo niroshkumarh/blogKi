@@ -1,6 +1,6 @@
-# 🐳 Docker Setup Guide for Wide Angle Blog
+# 🐳 Docker Setup Guide for Horizon Blog
 
-This guide will help you run the Wide Angle Blog using Docker and PostgreSQL.
+This guide will help you run the Horizon Blog using Docker and PostgreSQL.
 
 ---
 
@@ -341,4 +341,5 @@ If you encounter issues:
 4. Try rebuilding: `docker-compose up --build`
 
 **For questions or issues, check the logs carefully - they usually contain the answer!** 🔍
+
 

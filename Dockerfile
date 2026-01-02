@@ -1,4 +1,4 @@
-# Wide Angle Blog - Docker Image
+# Horizon Blog - Docker Image
 FROM python:3.12-slim
 
 # Set working directory
@@ -32,4 +32,5 @@ EXPOSE 4343
 
 # Run the application
 CMD ["python", "app.py"]
+
 

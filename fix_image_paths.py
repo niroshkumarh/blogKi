@@ -20,3 +20,4 @@ with app.app_context():
     db.session.commit()
     print("\n✅ All image paths fixed!")
 
+

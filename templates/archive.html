@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Wide Angle | Reflections and Conversations{% endblock %}
+{% block title %}Horizon | Reflections and Conversations{% endblock %}
 {% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
     <!--archive header-->
     <div class="archive-header pt-50 text-center">
         <div class="container">
-            <h2 class="font-weight-900">Wide Angle</h2>
+            <h2 class="font-weight-900">Horizon</h2>
             <div class="breadcrumb">
                 <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
                 <span></span> {% if month_key %}{{ month_key|format_month }}{% else %}All Posts{% endif %}
@@ -41,7 +41,7 @@
                                         </h3>
                                         <div class="entry-meta meta-1 font-small text-white mt-10 pr-5 pl-5">
                                             <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
-                                            <span class="hit-count has-dot">{{ post.excerpt or 'Wide Angle' }}</span>
+                                            <span class="hit-count has-dot">{{ post.excerpt or 'Horizon' }}</span>
                                         </div>
                                     </div>
                                 </div>

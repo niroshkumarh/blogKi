@@ -1,7 +1,7 @@
 @echo off
 REM Quick setup script for development (Windows)
 
-echo Setting up Wide Angle Blog...
+echo Setting up Horizon Blog...
 
 REM Check Python version
 python --version
@@ -55,4 +55,5 @@ echo   python app.py
 echo.
 echo Then visit: http://localhost:5000
 pause
+
 

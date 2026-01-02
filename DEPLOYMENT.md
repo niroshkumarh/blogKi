@@ -1,4 +1,4 @@
-# Wide Angle Blog - Ubuntu Deployment Guide
+# Horizon Blog - Ubuntu Deployment Guide
 
 ## Prerequisites
 - Ubuntu Server (20.04 LTS or later)
@@ -80,7 +80,7 @@ Create `/etc/systemd/system/blogsite.service`:
 
 ```ini
 [Unit]
-Description=Wide Angle Blog (Gunicorn)
+Description=Horizon Blog (Gunicorn)
 After=network.target
 
 [Service]
@@ -202,4 +202,5 @@ sudo systemctl restart blogsite
 - **Auth fails**: Verify `.env` file has correct Entra ID credentials
 - **Static files 404**: Check Nginx config and file permissions
 - **Database locked**: Ensure only one gunicorn process is running
+
 

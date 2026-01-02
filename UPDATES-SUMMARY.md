@@ -1,10 +1,10 @@
-# Updates Summary - Wide Angle Blog
+# Updates Summary - Horizon Blog
 
 ## ✅ Changes Completed
 
-### 1. **Site Name Changed from "Wonder List" to "Wide Angle"**
+### 1. **Site Name Changed from "Wonder List" to "Horizon"**
 
-All references to "Wonder List" have been updated to "Wide Angle" across:
+All references to "Wonder List" have been updated to "Horizon" across:
 
 - ✅ **Homepage** (`category-grid.html`)
   - Page title
@@ -75,7 +75,7 @@ To use your actual Aravind Srinivas video:
 
 ## 🌐 Live URLs
 
-- **Homepage:** `http://127.0.0.1:5500/` → Shows **Wide Angle**
+- **Homepage:** `http://127.0.0.1:5500/` → Shows **Horizon**
 - **Blog 1 (with YouTube):** `http://127.0.0.1:5500/blog-1-aravind-srinivas.html`
 - **Blog 2:** `http://127.0.0.1:5500/blog-2-vikram-arochamy.html`
 
@@ -91,7 +91,7 @@ To use your actual Aravind Srinivas video:
 
 ## ✨ What's New
 
-### Wide Angle Branding
+### Horizon Branding
 - Professional blog name that suggests perspective and insight
 - Consistent branding across all pages
 - Updated in titles, headers, and footers
@@ -107,7 +107,7 @@ To use your actual Aravind Srinivas video:
 ## 🎯 Next Steps (Optional)
 
 1. **Replace YouTube Video ID** with your actual Aravind Srinivas interview
-2. **Update Logo** - Replace `assets/imgs/theme/logo.png` with "Wide Angle" logo
+2. **Update Logo** - Replace `assets/imgs/theme/logo.png` with "Horizon" logo
 3. **Add More Posts** - Use the blog templates for additional content
 4. **Customize Colors** - Update brand colors in CSS to match your style
 

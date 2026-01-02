@@ -123,3 +123,4 @@ When visiting `https://blogs.iqubekct.ac.in/auth/login`, you should:
 2. **Share the output** so I can pinpoint the exact issue
 3. **Most importantly**: Confirm if you've updated the Azure Portal redirect URI
 
+
