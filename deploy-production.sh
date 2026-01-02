@@ -1,10 +1,10 @@
 #!/bin/bash
-# Production Deployment Script for Wide Angle Blog
+# Production Deployment Script for Horizon Blog
 # Run this on your production server after pulling latest code
 
 set -e  # Exit on error
 
-echo "🚀 Wide Angle Blog - Production Deployment"
+echo "🚀 Horizon Blog - Production Deployment"
 echo "==========================================="
 
 # Step 1: Pull latest code
