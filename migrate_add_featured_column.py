@@ -11,10 +11,10 @@ def migrate_add_featured():
     with app.app_context():
         try:
             # Try to add the column
-            print("Adding is_featured column to post table...")
+            print("Adding is_featured column to posts table...")
             
             # PostgreSQL and SQLite compatible syntax
-            db.session.execute(text("ALTER TABLE post ADD COLUMN is_featured BOOLEAN DEFAULT FALSE"))
+            db.session.execute(text("ALTER TABLE posts ADD COLUMN is_featured BOOLEAN DEFAULT FALSE"))
             db.session.commit()
             
             print("✅ Successfully added is_featured column")
