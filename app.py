@@ -89,13 +89,17 @@ def index():
 @login_required
 def archive(month_key):
     """Show posts for a specific month"""
-    posts = Post.query.filter_by(month_key=month_key, status='published').order_by(Post.published_at.desc()).all()
+    # Get all posts for the month
+    all_posts = Post.query.filter_by(month_key=month_key, status='published').order_by(Post.published_at.desc()).all()
+    
+    # Use first 2 posts as featured for carousel
+    featured_posts = all_posts[:2] if len(all_posts) >= 2 else all_posts
     
     # Get all available months
     months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
     months = [m[0] for m in months]
     
-    return render_template('archive.html', posts=posts, month_key=month_key, months=months)
+    return render_template('archive.html', posts=all_posts, featured_posts=featured_posts, month_key=month_key, months=months)
 
 
 @app.route('/post/<slug>')
@@ -127,6 +131,14 @@ def post_detail(slug):
 def inject_now():
     """Make current year available in all templates"""
     return {'now': datetime.utcnow()}
+
+
+@app.context_processor
+def inject_months():
+    """Expose published month list for navigation and error pages."""
+    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
+    months = [m[0] for m in months]
+    return {'months': months}
 
 
 @app.errorhandler(404)
