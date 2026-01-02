@@ -37,7 +37,10 @@ CURRENT_REDIRECT=$(grep REDIRECT_URI .env | cut -d'=' -f2)
 echo "Current REDIRECT_URI: $CURRENT_REDIRECT"
 if [[ ! "$CURRENT_REDIRECT" =~ ^https:// ]]; then
     echo "⚠️  WARNING: REDIRECT_URI should use HTTPS for production!"
-    echo "   Expected: https://blogs.iqubekct.ac.in/auth/callback"
+    echo "   Supported domains:"
+    echo "   - https://blogs.iqubekct.ac.in/auth/callback"
+    echo "   - https://horizon.kumaraguru.in/auth/callback"
+    echo "   Note: App will auto-detect domain, but this is the fallback."
 fi
 
 # Step 3: Stop existing containers
@@ -100,4 +103,5 @@ echo "   • View logs: docker logs blogki-web"
 echo "   • Restart: docker-compose restart web"
 echo "   • Rebuild: docker-compose up -d --build web"
 echo "==========================================="
+
 

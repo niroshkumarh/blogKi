@@ -5,7 +5,7 @@ import os
 from functools import wraps
 from flask import Blueprint, session, redirect, url_for, request, flash, current_app, render_template
 from authlib.integrations.flask_client import OAuth
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, db
 
 auth_bp = Blueprint('auth', __name__)
@@ -56,6 +56,38 @@ def admin_required(f):
     return decorated_function
 
 
+def _get_dynamic_redirect_uri():
+    """
+    Build redirect URI dynamically based on the incoming request domain.
+    Supports multiple domains: blogs.iqubekct.ac.in, horizon.kumaraguru.in
+    """
+    # Get the scheme (http/https) - prefer https in production
+    scheme = request.scheme
+    if request.headers.get('X-Forwarded-Proto'):
+        scheme = request.headers.get('X-Forwarded-Proto')
+    elif current_app.config.get('PREFERRED_URL_SCHEME'):
+        scheme = current_app.config['PREFERRED_URL_SCHEME']
+    
+    # Get the host (domain)
+    host = request.host
+    if request.headers.get('X-Forwarded-Host'):
+        host = request.headers.get('X-Forwarded-Host')
+    
+    # Build the callback URI
+    callback_path = '/auth/callback'
+    redirect_uri = f"{scheme}://{host}{callback_path}"
+    
+    # Log for debugging
+    current_app.logger.info(f"Dynamic redirect URI: {redirect_uri}")
+    
+    # Fallback to configured URI if something goes wrong
+    if not host or host == 'None':
+        redirect_uri = current_app.config['ENTRA_REDIRECT_URI']
+        current_app.logger.warning(f"Using fallback redirect URI: {redirect_uri}")
+    
+    return redirect_uri
+
+
 @auth_bp.route('/login')
 def login():
     """Initiate Entra ID login"""
@@ -64,7 +96,9 @@ def login():
     if next_url:
         session['next_url'] = next_url
     
-    redirect_uri = current_app.config['ENTRA_REDIRECT_URI']
+    # Dynamic redirect URI detection for multi-domain support
+    # Supports: blogs.iqubekct.ac.in and horizon.kumaraguru.in
+    redirect_uri = _get_dynamic_redirect_uri()
     
     # Force session to be saved
     session.modified = True
@@ -94,11 +128,15 @@ def callback():
                 # Exchange code for token manually
                 import requests
                 token_url = f"https://login.microsoftonline.com/{current_app.config['ENTRA_TENANT_ID']}/oauth2/v2.0/token"
+                
+                # Use dynamic redirect URI to match the one used in login
+                redirect_uri = _get_dynamic_redirect_uri()
+                
                 token_data = {
                     'client_id': current_app.config['ENTRA_CLIENT_ID'],
                     'client_secret': current_app.config['ENTRA_CLIENT_SECRET'],
                     'code': code,
-                    'redirect_uri': current_app.config['ENTRA_REDIRECT_URI'],
+                    'redirect_uri': redirect_uri,
                     'grant_type': 'authorization_code',
                     'scope': 'openid profile email'
                 }
@@ -152,7 +190,7 @@ def callback():
             # Update user info
             user.email = email
             user.name = name
-            user.last_login_at = datetime.utcnow()
+            user.last_login_at = datetime.now(timezone.utc)
         
         db.session.commit()
         
