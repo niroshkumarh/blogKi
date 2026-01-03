@@ -439,13 +439,14 @@ def track_read_event(post_id):
         
         # Determine identity: logged-in user or anonymous
         user_id = session.get('user_id')
-        anon_id = None
+        anon_id = data.get('anon_id')  # Always capture anon_id (for cross-session tracking)
         
-        if not user_id:
-            # Anonymous user - get anon_id from request
-            anon_id = data.get('anon_id')
-            if not anon_id:
-                return jsonify({'error': 'Missing anon_id for anonymous tracking'}), 400
+        # Log what we're tracking
+        current_app.logger.info(f"📊 Read event: post_id={post_id}, user_id={user_id}, anon_id={anon_id[:8] if anon_id else None}..., percent={percent}%, seconds={seconds}s")
+        
+        if not user_id and not anon_id:
+            # Need at least one identifier
+            return jsonify({'error': 'Missing user_id or anon_id for tracking'}), 400
         
         # Capture IP address (handle reverse proxy)
         ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
@@ -470,7 +471,13 @@ def track_read_event(post_id):
         db.session.add(read_event)
         db.session.commit()
         
-        return jsonify({'success': True})
+        # Return user info for debugging
+        return jsonify({
+            'success': True,
+            'tracked_as': 'logged_in' if user_id else 'anonymous',
+            'user_id': user_id,
+            'anon_id': anon_id[:8] + '...' if anon_id else None
+        })
         
     except Exception as e:
         current_app.logger.error(f"Read event error: {e}")

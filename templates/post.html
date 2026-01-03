@@ -894,6 +894,8 @@ function getAnonId() {
 function trackReadEvent(percent, seconds) {
     const anonId = getAnonId(); // Always get/set anon_id for tracking
     
+    console.log(`📤 Sending read event: ${percent}%, ${seconds}s, anon_id=${anonId.substring(0, 8)}...`);
+    
     fetch(`/api/read-event/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -906,11 +908,20 @@ function trackReadEvent(percent, seconds) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log(`📊 Read event tracked: ${percent}%, ${seconds}s`);
+            console.log(`✅ Read event tracked successfully!`);
+            console.log(`   Tracked as: ${data.tracked_as}`);
+            if (data.user_id) {
+                console.log(`   User ID: ${data.user_id}`);
+            }
+            if (data.anon_id) {
+                console.log(`   Anon ID: ${data.anon_id}`);
+            }
+        } else {
+            console.error('❌ Read event failed:', data.error);
         }
     })
     .catch(error => {
-        console.error('Read event tracking error:', error);
+        console.error('❌ Read event tracking error:', error);
     });
 }
 
