@@ -5,8 +5,258 @@ from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Post, Comment, Like, ReadEvent, User, CommentLike
 from auth import login_required
 from datetime import datetime
+import requests
+from urllib.parse import urlparse, parse_qs
+from bs4 import BeautifulSoup
+import socket
+import ipaddress
+from functools import lru_cache
+import hashlib
 
 api_bp = Blueprint('api', __name__)
+
+# Simple in-memory cache for link previews (TTL: 1 hour)
+LINK_PREVIEW_CACHE = {}
+CACHE_TTL = 3600
+
+# SSRF Protection: Block these IP ranges
+BLOCKED_IP_RANGES = [
+    ipaddress.ip_network('127.0.0.0/8'),      # Loopback
+    ipaddress.ip_network('10.0.0.0/8'),       # Private
+    ipaddress.ip_network('172.16.0.0/12'),    # Private
+    ipaddress.ip_network('192.168.0.0/16'),   # Private
+    ipaddress.ip_network('169.254.0.0/16'),   # Link-local
+    ipaddress.ip_network('::1/128'),          # IPv6 loopback
+    ipaddress.ip_network('fc00::/7'),         # IPv6 private
+    ipaddress.ip_network('fe80::/10'),        # IPv6 link-local
+]
+
+# Known oEmbed providers
+OEMBED_PROVIDERS = {
+    'youtube.com': 'https://www.youtube.com/oembed?url={url}&format=json',
+    'youtu.be': 'https://www.youtube.com/oembed?url={url}&format=json',
+    'vimeo.com': 'https://vimeo.com/api/oembed.json?url={url}',
+    'twitter.com': 'https://publish.twitter.com/oembed?url={url}',
+    'x.com': 'https://publish.twitter.com/oembed?url={url}',
+    'instagram.com': 'https://graph.facebook.com/v12.0/instagram_oembed?url={url}',
+}
+
+
+def is_safe_url(url):
+    """Validate URL and check for SSRF attacks"""
+    try:
+        parsed = urlparse(url)
+        
+        # Only allow http/https
+        if parsed.scheme not in ['http', 'https']:
+            return False, "Only HTTP/HTTPS URLs are allowed"
+        
+        # Get hostname
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "Invalid hostname"
+        
+        # Resolve hostname to IP
+        try:
+            ip = socket.gethostbyname(hostname)
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # Check against blocked ranges
+            for blocked_range in BLOCKED_IP_RANGES:
+                if ip_obj in blocked_range:
+                    return False, f"Access to {hostname} ({ip}) is blocked"
+            
+        except socket.gaierror:
+            return False, "Cannot resolve hostname"
+        except ValueError:
+            return False, "Invalid IP address"
+        
+        return True, None
+        
+    except Exception as e:
+        return False, f"URL validation error: {str(e)}"
+
+
+def get_oembed_data(url):
+    """Try to fetch oEmbed data from known providers"""
+    try:
+        parsed = urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        
+        # Check if domain has oEmbed support
+        for provider_domain, oembed_url in OEMBED_PROVIDERS.items():
+            if provider_domain in domain:
+                try:
+                    response = requests.get(
+                        oembed_url.format(url=url),
+                        timeout=5,
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        return {
+                            'type': data.get('type', 'video'),
+                            'url': url,
+                            'title': data.get('title', ''),
+                            'description': data.get('description', ''),
+                            'image': data.get('thumbnail_url', ''),
+                            'site_name': data.get('provider_name', ''),
+                            'embed_html': data.get('html', ''),
+                            'provider': provider_domain
+                        }
+                except Exception as e:
+                    current_app.logger.warning(f"oEmbed fetch failed for {url}: {e}")
+                    continue
+        
+        return None
+        
+    except Exception as e:
+        current_app.logger.error(f"oEmbed error: {e}")
+        return None
+
+
+def parse_og_tags(html, url):
+    """Parse Open Graph and Twitter Card meta tags from HTML"""
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        og_data = {
+            'type': 'link',
+            'url': url,
+            'title': '',
+            'description': '',
+            'image': '',
+            'site_name': '',
+            'embed_html': None,
+            'provider': None
+        }
+        
+        # Try Open Graph tags
+        og_tags = {
+            'og:type': 'type',
+            'og:url': 'url',
+            'og:title': 'title',
+            'og:description': 'description',
+            'og:image': 'image',
+            'og:site_name': 'site_name',
+        }
+        
+        for og_tag, key in og_tags.items():
+            tag = soup.find('meta', property=og_tag) or soup.find('meta', attrs={'name': og_tag})
+            if tag and tag.get('content'):
+                og_data[key] = tag['content']
+        
+        # Fallback to Twitter Card tags
+        if not og_data['title']:
+            twitter_title = soup.find('meta', attrs={'name': 'twitter:title'})
+            if twitter_title and twitter_title.get('content'):
+                og_data['title'] = twitter_title['content']
+        
+        if not og_data['description']:
+            twitter_desc = soup.find('meta', attrs={'name': 'twitter:description'})
+            if twitter_desc and twitter_desc.get('content'):
+                og_data['description'] = twitter_desc['content']
+        
+        if not og_data['image']:
+            twitter_img = soup.find('meta', attrs={'name': 'twitter:image'})
+            if twitter_img and twitter_img.get('content'):
+                og_data['image'] = twitter_img['content']
+        
+        # Fallback to HTML tags
+        if not og_data['title']:
+            title_tag = soup.find('title')
+            if title_tag:
+                og_data['title'] = title_tag.get_text().strip()
+        
+        if not og_data['description']:
+            desc_tag = soup.find('meta', attrs={'name': 'description'})
+            if desc_tag and desc_tag.get('content'):
+                og_data['description'] = desc_tag['content']
+        
+        # Extract domain as site_name if not provided
+        if not og_data['site_name']:
+            parsed = urlparse(url)
+            og_data['site_name'] = parsed.netloc.replace('www.', '')
+        
+        return og_data
+        
+    except Exception as e:
+        current_app.logger.error(f"OG parsing error: {e}")
+        return None
+
+
+@api_bp.route('/link-preview', methods=['GET'])
+@login_required
+def link_preview():
+    """Fetch link preview metadata (Open Graph + oEmbed)"""
+    try:
+        url = request.args.get('url', '').strip()
+        
+        if not url:
+            return jsonify({'error': 'URL parameter is required'}), 400
+        
+        # Validate URL for SSRF
+        is_safe, error_msg = is_safe_url(url)
+        if not is_safe:
+            return jsonify({'error': f'Invalid URL: {error_msg}'}), 400
+        
+        # Check cache
+        cache_key = hashlib.md5(url.encode()).hexdigest()
+        if cache_key in LINK_PREVIEW_CACHE:
+            cached_data, cached_time = LINK_PREVIEW_CACHE[cache_key]
+            if (datetime.now().timestamp() - cached_time) < CACHE_TTL:
+                return jsonify({'success': True, 'data': cached_data})
+        
+        # Try oEmbed first (best for videos)
+        oembed_data = get_oembed_data(url)
+        if oembed_data:
+            LINK_PREVIEW_CACHE[cache_key] = (oembed_data, datetime.now().timestamp())
+            return jsonify({'success': True, 'data': oembed_data})
+        
+        # Fallback to Open Graph scraping
+        try:
+            response = requests.get(
+                url,
+                timeout=8,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                },
+                allow_redirects=True,
+                stream=True
+            )
+            
+            # Check content type
+            content_type = response.headers.get('Content-Type', '').lower()
+            if 'text/html' not in content_type and 'application/xhtml' not in content_type:
+                return jsonify({'error': 'URL does not point to an HTML page'}), 400
+            
+            # Limit download size (max 2MB)
+            max_size = 2 * 1024 * 1024
+            content = b''
+            for chunk in response.iter_content(chunk_size=8192):
+                content += chunk
+                if len(content) > max_size:
+                    break
+            
+            html = content.decode('utf-8', errors='ignore')
+            
+            og_data = parse_og_tags(html, url)
+            if og_data:
+                LINK_PREVIEW_CACHE[cache_key] = (og_data, datetime.now().timestamp())
+                return jsonify({'success': True, 'data': og_data})
+            else:
+                return jsonify({'error': 'Could not extract metadata from URL'}), 400
+                
+        except requests.Timeout:
+            return jsonify({'error': 'Request timeout'}), 408
+        except requests.RequestException as e:
+            return jsonify({'error': f'Failed to fetch URL: {str(e)}'}), 400
+        
+    except Exception as e:
+        current_app.logger.error(f"Link preview error: {e}")
+        return jsonify({'error': 'Failed to generate preview'}), 500
 
 
 @api_bp.route('/like/<int:post_id>', methods=['POST'])

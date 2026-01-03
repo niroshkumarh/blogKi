@@ -282,6 +282,111 @@
         position: relative;
     }
     
+    /* Link Preview Card Styles */
+    .link-preview-embed {
+        margin: 20px 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .link-preview-embed:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .link-preview-card {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background: #f5f5f5;
+        position: relative;
+    }
+    
+    .preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .preview-play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 60px;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+    }
+    
+    .preview-content {
+        padding: 15px;
+    }
+    
+    .preview-site-name {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .preview-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+    
+    .preview-description {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .preview-url {
+        font-size: 12px;
+        color: #999;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .preview-url i {
+        font-size: 10px;
+    }
+    
+    .preview-url span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .preview-embed {
+        margin-top: 10px;
+        padding: 0 15px 15px;
+    }
+    
+    .preview-embed iframe {
+        width: 100%;
+        border: 0;
+        border-radius: 4px;
+    }
+    
     /* Responsive design */
     @media (max-width: 768px) {
         .ql-toolbar.ql-snow .ql-formats {
@@ -292,6 +397,14 @@
         .editor-stats {
             flex-direction: column;
             gap: 5px;
+        }
+        
+        .preview-image {
+            height: 150px;
+        }
+        
+        .preview-title {
+            font-size: 16px;
         }
     }
 </style>
@@ -340,6 +453,9 @@
                                     <span class="autosave-indicator" id="autosave-status"></span>
                                 </div>
                                 <div class="editor-actions">
+                                    <button type="button" class="editor-btn" id="link-preview-btn" title="Insert Link Preview Card">
+                                        <i class="fas fa-link"></i> Link Preview
+                                    </button>
                                     <button type="button" class="editor-btn" id="source-toggle" title="View HTML Source">
                                         <i class="fas fa-code"></i> Source
                                     </button>
@@ -513,6 +629,60 @@ $(document).ready(function() {
         Size.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '24px', '32px', '48px'];
         Quill.register(Size, true);
 
+        // Register custom link preview blot
+        var BlockEmbed = Quill.import('blots/block/embed');
+        
+        class LinkPreviewBlot extends BlockEmbed {
+            static create(value) {
+                const node = super.create();
+                node.setAttribute('data-preview', JSON.stringify(value));
+                node.classList.add('link-preview-embed');
+                
+                // Create preview card HTML
+                const cardHtml = `
+                    <div class="link-preview-card">
+                        ${value.image ? `<div class="preview-image"><img src="${value.image}" alt="${value.title || ''}"></div>` : ''}
+                        <div class="preview-content">
+                            <div class="preview-site-name">${value.site_name || ''}</div>
+                            <div class="preview-title">${value.title || 'No title'}</div>
+                            ${value.description ? `<div class="preview-description">${value.description}</div>` : ''}
+                            <div class="preview-url"><i class="fas fa-link"></i> <span>${value.url}</span></div>
+                        </div>
+                        ${value.type === 'video' && !value.embed_html ? '<div class="preview-play-overlay"><i class="fas fa-play-circle"></i></div>' : ''}
+                        ${value.embed_html ? `<div class="preview-embed">${value.embed_html}</div>` : ''}
+                    </div>
+                `;
+                
+                node.innerHTML = cardHtml;
+                node.setAttribute('contenteditable', 'false');
+                
+                // Make it clickable to open URL (unless it has embed)
+                if (!value.embed_html) {
+                    node.style.cursor = 'pointer';
+                    node.onclick = function() {
+                        window.open(value.url, '_blank');
+                    };
+                }
+                
+                return node;
+            }
+            
+            static value(node) {
+                try {
+                    return JSON.parse(node.getAttribute('data-preview'));
+                } catch(e) {
+                    return {};
+                }
+            }
+        }
+        
+        LinkPreviewBlot.blotName = 'linkPreview';
+        LinkPreviewBlot.tagName = 'div';
+        LinkPreviewBlot.className = 'link-preview-embed';
+        
+        Quill.register(LinkPreviewBlot);
+        console.log('✅ Link preview blot registered');
+
         // Initialize Quill editor with comprehensive features
         quill = new Quill('#editor', {
         theme: 'snow',
@@ -660,6 +830,9 @@ function setupEditorFeatures() {
         clearTimeout(autosaveTimeout);
         autosaveTimeout = setTimeout(autosave, 3000);
     });
+    
+    // Link Preview button handler
+    $('#link-preview-btn').on('click', handleLinkPreview);
 }
 
 function handlePaste(e) {
@@ -962,6 +1135,49 @@ function videoHandler() {
         // Show success message
         showNotification('Video embedded successfully! (Preview may not show in editor)', 'success');
     }
+
+// Link Preview handler - fetches metadata and inserts preview card
+function handleLinkPreview() {
+    const url = prompt('Enter URL to preview (website, video, etc.):');
+    if (!url || !url.trim()) return;
+    
+    const trimmedUrl = url.trim();
+    
+    // Basic URL validation
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+        showNotification('Please enter a valid URL starting with http:// or https://', 'warning');
+        return;
+    }
+    
+    // Show loading notification
+    showNotification('Fetching link preview...', 'info');
+    
+    // Call backend API to fetch preview data
+    $.ajax({
+        url: '{{ url_for("api.link_preview") }}',
+        method: 'GET',
+        data: { url: trimmedUrl },
+        success: function(response) {
+            if (response.success && response.data) {
+                const previewData = response.data;
+                
+                // Insert link preview at current cursor position
+                const range = quill.getSelection(true) || { index: quill.getLength() };
+                quill.insertEmbed(range.index, 'linkPreview', previewData);
+                quill.insertText(range.index + 1, '\n');
+                quill.setSelection(range.index + 2);
+                
+                showNotification('Link preview inserted!', 'success');
+            } else {
+                showNotification('Failed to fetch preview: ' + (response.error || 'Unknown error'), 'error');
+            }
+        },
+        error: function(xhr) {
+            const errorMsg = xhr.responseJSON?.error || 'Failed to fetch link preview';
+            showNotification(errorMsg, 'error');
+        }
+    });
+}
 
 // Enhanced Image upload handler with better feedback
 function imageHandler() {
