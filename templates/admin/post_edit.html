@@ -923,9 +923,9 @@ $('#hero_image').on('change', function(e) {
 // CUSTOM TOOLBAR HANDLERS
 // ========================================
 
-// Enhanced Video embed handler with better UI
+// Enhanced Video embed handler with YouTube Shorts support
 function videoHandler() {
-        const url = prompt('Enter video URL (YouTube, Vimeo, or direct link):');
+        const url = prompt('Enter video URL (YouTube, YouTube Shorts, Vimeo, or direct link):');
         if (!url) return;
         
         let embedUrl = url;
@@ -934,6 +934,16 @@ function videoHandler() {
         if (url.includes('youtube.com/watch?v=')) {
             const videoId = url.split('v=')[1].split('&')[0];
             embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        } else if (url.includes('youtube.com/shorts/') || url.includes('youtube.com/shorts?')) {
+            // Handle YouTube Shorts URLs
+            // Extract video ID from shorts URL
+            let videoId;
+            if (url.includes('/shorts/')) {
+                videoId = url.split('/shorts/')[1].split('?')[0].split('&')[0];
+            }
+            // YouTube Shorts can be embedded as regular videos
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            console.log('✅ YouTube Shorts detected, video ID:', videoId);
         } else if (url.includes('youtu.be/')) {
             const videoId = url.split('youtu.be/')[1].split('?')[0];
             embedUrl = `https://www.youtube.com/embed/${videoId}`;
@@ -950,7 +960,7 @@ function videoHandler() {
         quill.setSelection(range.index + 1);
         
         // Show success message
-        showNotification('Video embedded successfully!', 'success');
+        showNotification('Video embedded successfully! (Preview may not show in editor)', 'success');
     }
 
 // Enhanced Image upload handler with better feedback
