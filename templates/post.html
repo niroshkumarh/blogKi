@@ -939,6 +939,12 @@ function sendTrackingEvent() {
 $(document).ready(function() {
     updateScrollDepth();
     
+    // Send initial tracking event immediately
+    setTimeout(function() {
+        sendTrackingEvent();
+        console.log('📊 Initial read event sent');
+    }, 3000); // Send after 3 seconds to ensure page is loaded
+    
     // Track scroll
     $(window).on('scroll', updateScrollDepth);
     
