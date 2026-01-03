@@ -2,7 +2,7 @@
 API endpoints for comments, likes, and read tracking
 """
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Post, Comment, Like, ReadEvent, User
+from models import db, Post, Comment, Like, ReadEvent, User, CommentLike
 from auth import login_required
 from datetime import datetime
 
@@ -52,7 +52,7 @@ def toggle_like(post_id):
 @api_bp.route('/comment/<int:post_id>', methods=['POST'])
 @login_required
 def add_comment(post_id):
-    """Add a comment to a post"""
+    """Add a comment to a post or reply to an existing comment"""
     try:
         user_id = session.get('user_id')
         if not user_id:
@@ -60,6 +60,7 @@ def add_comment(post_id):
         
         data = request.get_json()
         body = data.get('body', '').strip()
+        parent_id = data.get('parent_id', None)  # For nested replies
         
         if not body:
             return jsonify({'error': 'Comment body is required'}), 400
@@ -69,10 +70,17 @@ def add_comment(post_id):
         
         post = Post.query.get_or_404(post_id)
         
+        # If parent_id provided, validate it exists and belongs to this post
+        if parent_id:
+            parent_comment = Comment.query.get(parent_id)
+            if not parent_comment or parent_comment.post_id != post_id:
+                return jsonify({'error': 'Invalid parent comment'}), 400
+        
         comment = Comment(
             post_id=post_id,
             user_id=user_id,
-            body=body
+            body=body,
+            parent_id=parent_id
         )
         
         db.session.add(comment)
@@ -87,7 +95,10 @@ def add_comment(post_id):
                 'id': comment.id,
                 'body': comment.body,
                 'created_at': comment.created_at.isoformat(),
-                'user_name': user.name or user.email
+                'user_name': user.name or user.email,
+                'parent_id': parent_id,
+                'like_count': 0,
+                'reply_count': 0
             }
         })
         
@@ -120,6 +131,46 @@ def delete_comment(comment_id):
     except Exception as e:
         current_app.logger.error(f"Comment delete error: {e}")
         return jsonify({'error': 'Failed to delete comment'}), 500
+
+
+@api_bp.route('/comment/<int:comment_id>/like', methods=['POST'])
+@login_required
+def toggle_comment_like(comment_id):
+    """Toggle like on a comment"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Not authenticated'}), 401
+        
+        comment = Comment.query.get_or_404(comment_id)
+        
+        # Check if already liked
+        existing_like = CommentLike.query.filter_by(comment_id=comment_id, user_id=user_id).first()
+        
+        if existing_like:
+            # Unlike
+            db.session.delete(existing_like)
+            db.session.commit()
+            liked = False
+        else:
+            # Like
+            new_like = CommentLike(comment_id=comment_id, user_id=user_id)
+            db.session.add(new_like)
+            db.session.commit()
+            liked = True
+        
+        # Get updated count
+        like_count = CommentLike.query.filter_by(comment_id=comment_id).count()
+        
+        return jsonify({
+            'success': True,
+            'liked': liked,
+            'like_count': like_count
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Comment like toggle error: {e}")
+        return jsonify({'error': 'Failed to toggle comment like'}), 500
 
 
 @api_bp.route('/read-event/<int:post_id>', methods=['POST'])
@@ -162,22 +213,41 @@ def track_read_event(post_id):
 @api_bp.route('/comments/<int:post_id>', methods=['GET'])
 @login_required
 def get_comments(post_id):
-    """Get all comments for a post"""
+    """Get all comments for a post (nested structure with likes)"""
     try:
         post = Post.query.get_or_404(post_id)
+        user_id = session.get('user_id')
         
-        comments = Comment.query.filter_by(post_id=post_id).order_by(Comment.created_at.desc()).all()
+        # Get all top-level comments (no parent)
+        comments = Comment.query.filter_by(post_id=post_id, parent_id=None).order_by(Comment.created_at.desc()).all()
         
-        comment_list = []
-        for comment in comments:
+        def format_comment(comment):
+            """Format a comment with all its details"""
             user = User.query.get(comment.user_id)
-            comment_list.append({
+            
+            # Check if current user liked this comment
+            user_liked = False
+            if user_id:
+                user_liked = CommentLike.query.filter_by(comment_id=comment.id, user_id=user_id).first() is not None
+            
+            # Get replies
+            replies = comment.get_all_replies()
+            formatted_replies = [format_comment(reply) for reply in replies]
+            
+            return {
                 'id': comment.id,
                 'body': comment.body,
                 'created_at': comment.created_at.isoformat(),
                 'user_name': user.name or user.email,
-                'can_delete': session.get('user_id') == comment.user_id or session.get('is_admin', False)
-            })
+                'like_count': comment.get_like_count(),
+                'reply_count': comment.get_reply_count(),
+                'user_liked': user_liked,
+                'replies': formatted_replies,
+                'can_delete': user_id == comment.user_id or session.get('is_admin', False),
+                'parent_id': comment.parent_id
+            }
+        
+        comment_list = [format_comment(comment) for comment in comments]
         
         return jsonify({
             'success': True,

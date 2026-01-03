@@ -26,6 +26,7 @@ class User(db.Model):
     # Relationships
     comments = db.relationship('Comment', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    comment_likes = db.relationship('CommentLike', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     read_events = db.relationship('ReadEvent', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     def __repr__(self):
@@ -96,14 +97,33 @@ class Post(db.Model):
 
 
 class Comment(db.Model):
-    """Comment model - user comments on posts"""
+    """Comment model - user comments on posts (supports nested replies)"""
     __tablename__ = 'comments'
     
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True, index=True)  # For nested replies
     body = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
+    
+    # Self-referential relationship for nested comments
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic', cascade='all, delete-orphan')
+    
+    # Relationship with comment likes
+    comment_likes = db.relationship('CommentLike', backref='comment', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def get_like_count(self):
+        """Get total likes for this comment"""
+        return self.comment_likes.count()
+    
+    def get_reply_count(self):
+        """Get total direct replies to this comment"""
+        return self.replies.count()
+    
+    def get_all_replies(self):
+        """Get all replies sorted by creation date"""
+        return self.replies.order_by(Comment.created_at.asc()).all()
     
     def __repr__(self):
         return f'<Comment {self.id} on Post {self.post_id}>'
@@ -125,6 +145,24 @@ class Like(db.Model):
     
     def __repr__(self):
         return f'<Like {self.id} on Post {self.post_id}>'
+
+
+class CommentLike(db.Model):
+    """CommentLike model - user likes on comments"""
+    __tablename__ = 'comment_likes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    
+    # Unique constraint - one like per user per comment
+    __table_args__ = (
+        db.UniqueConstraint('comment_id', 'user_id', name='unique_comment_user_like'),
+    )
+    
+    def __repr__(self):
+        return f'<CommentLike {self.id} on Comment {self.comment_id}>'
 
 
 class ReadEvent(db.Model):
