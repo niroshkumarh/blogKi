@@ -6,6 +6,19 @@
 {% block extra_css %}
 <style>
     /* Gradient overlay is now inline for better compatibility */
+    
+    /* Force featured carousel content to bottom (override any conflicting styles) */
+    .carausel-post-1 .post-content-overlay {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+    }
+    
+    .carausel-post-1:hover .post-content-overlay {
+        bottom: 15px !important;
+    }
 </style>
 {% endblock %}
 
