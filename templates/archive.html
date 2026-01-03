@@ -72,7 +72,7 @@
                                 </h5>
                                 {% if post.excerpt %}
                                 <p class="post-excerpt mb-15 text-muted" style="font-size: 14px; line-height: 1.6;">
-                                    {{ post.excerpt[:120] }}{% if post.excerpt|length > 120 %}...{% endif %}
+                                    {{ post.excerpt[:30] }}{% if post.excerpt|length > 30 %}...{% endif %}
                                 </p>
                                 {% endif %}
                                 <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
