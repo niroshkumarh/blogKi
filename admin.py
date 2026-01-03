@@ -246,6 +246,9 @@ def post_delete(post_id):
 @admin_required
 def post_stats(post_id):
     """Detailed stats for a specific post"""
+    from models import CommentLike
+    from sqlalchemy import func
+    
     post = Post.query.get_or_404(post_id)
     
     # Get unique viewers
@@ -259,9 +262,45 @@ def post_stats(post_id):
     avg_completion = db.session.query(func.avg(ReadEvent.percent)).filter_by(post_id=post_id).scalar() or 0
     avg_time = db.session.query(func.avg(ReadEvent.seconds)).filter_by(post_id=post_id).scalar() or 0
     
-    # Get likes and comments
+    # Get likes
     likes = Like.query.filter_by(post_id=post_id).all()
-    comments = Comment.query.filter_by(post_id=post_id).order_by(Comment.created_at.desc()).all()
+    
+    # Get all comments (including nested)
+    all_comments = Comment.query.filter_by(post_id=post_id).all()
+    top_level_comments = [c for c in all_comments if c.parent_id is None]
+    reply_comments = [c for c in all_comments if c.parent_id is not None]
+    
+    # Get comment likes for this post
+    comment_ids = [c.id for c in all_comments]
+    comment_likes_count = CommentLike.query.filter(CommentLike.comment_id.in_(comment_ids)).count() if comment_ids else 0
+    
+    # Build comment data with nested structure
+    comment_data = []
+    for comment in sorted(top_level_comments, key=lambda x: x.created_at, reverse=True):
+        data = {
+            'comment': comment,
+            'user': comment.user,
+            'like_count': comment.get_like_count(),
+            'reply_count': comment.get_reply_count(),
+            'replies': []
+        }
+        
+        # Get replies
+        for reply in comment.get_all_replies():
+            reply_data = {
+                'comment': reply,
+                'user': reply.user,
+                'like_count': reply.get_like_count()
+            }
+            data['replies'].append(reply_data)
+        
+        comment_data.append(data)
+    
+    # Calculate engagement rate
+    engagement_rate = 0
+    if total_views > 0:
+        total_interactions = len(likes) + len(all_comments) + comment_likes_count
+        engagement_rate = round((total_interactions / total_views) * 100, 1)
     
     return render_template('admin/post_stats.html',
                           post=post,
@@ -270,7 +309,12 @@ def post_stats(post_id):
                           avg_completion=round(avg_completion, 1),
                           avg_time=round(avg_time / 60, 1) if avg_time else 0,
                           likes=likes,
-                          comments=comments)
+                          comment_data=comment_data,
+                          total_comments=len(all_comments),
+                          top_level_count=len(top_level_comments),
+                          reply_count=len(reply_comments),
+                          comment_likes_count=comment_likes_count,
+                          engagement_rate=engagement_rate)
 
 
 @admin_bp.route('/users')

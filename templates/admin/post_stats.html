@@ -126,7 +126,7 @@
     </a>
 </div>
 
-<!-- Stats Cards Row -->
+<!-- Stats Cards Row 1: Reading Stats -->
 <div class="row mb-4">
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
@@ -160,8 +160,72 @@
             <div class="stat-icon icon-red">
                 <i class="fas fa-heart"></i>
             </div>
-            <div class="stat-label">Total Likes</div>
+            <div class="stat-label">Post Likes</div>
             <div class="stat-number">{{ likes|length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards Row 2: Engagement Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-label">Total Comments</div>
+            <div class="stat-number">{{ total_comments }}</div>
+            <small class="text-muted">Main + Replies</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-green">
+                <i class="fas fa-comment"></i>
+            </div>
+            <div class="stat-label">Top-Level</div>
+            <div class="stat-number">{{ top_level_count }}</div>
+            <small class="text-muted">Main comments</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-purple">
+                <i class="fas fa-reply"></i>
+            </div>
+            <div class="stat-label">Replies</div>
+            <div class="stat-number">{{ reply_count }}</div>
+            <small class="text-muted">Nested replies</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon icon-red">
+                <i class="fas fa-heart"></i>
+            </div>
+            <div class="stat-label">Comment Likes</div>
+            <div class="stat-number">{{ comment_likes_count }}</div>
+            <small class="text-muted">Likes on comments</small>
+        </div>
+    </div>
+</div>
+
+<!-- Engagement Rate Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label" style="color: rgba(255,255,255,0.9);">Overall Engagement Rate</div>
+                    <div class="stat-number" style="color: white;">{{ engagement_rate }}%</div>
+                    <small style="color: rgba(255,255,255,0.8);">
+                        Based on views, likes, comments, and comment likes
+                    </small>
+                </div>
+                <div style="font-size: 4rem; opacity: 0.2;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -266,46 +330,87 @@
     </div>
 </div>
 
-<!-- Comments Table -->
+<!-- Comments & Replies Table -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="table-container">
             <div class="section-title">
                 <i class="fas fa-comments"></i>
-                <span>Comments</span>
-                <span class="badge-count ms-auto">{{ comments|length }}</span>
+                <span>Comments & Replies</span>
+                <span class="badge-count ms-auto">{{ total_comments }}</span>
             </div>
-            {% if comments %}
+            {% if comment_data %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th width="5%">#</th>
                             <th width="25%">User</th>
-                            <th width="50%">Comment</th>
+                            <th width="45%">Comment</th>
+                            <th width="10%">Stats</th>
                             <th width="20%">Posted At</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for comment in comments %}
-                        <tr>
-                            <td class="text-muted">{{ loop.index }}</td>
+                        {% for data in comment_data %}
+                        <!-- Main Comment -->
+                        <tr style="background-color: #f0f9ff; border-left: 4px solid #2563eb;">
                             <td>
                                 <div class="user-name">
                                     <i class="fas fa-user-circle me-2" style="color: #2563eb;"></i>
-                                    {{ comment.user.name or 'Unknown User' }}
+                                    {{ data.user.name or 'Unknown User' }}
                                 </div>
-                                <small class="text-muted d-block mt-1">{{ comment.user.email }}</small>
+                                <small class="text-muted d-block mt-1">{{ data.user.email }}</small>
                             </td>
                             <td>
-                                <div class="comment-text">{{ comment.body }}</div>
+                                <div class="comment-text"><strong>{{ data.comment.body }}</strong></div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-danger" style="font-size: 0.75rem;">
+                                        <i class="fas fa-heart"></i> {{ data.like_count }}
+                                    </span>
+                                    <span class="badge bg-info" style="font-size: 0.75rem;">
+                                        <i class="fas fa-reply"></i> {{ data.reply_count }}
+                                    </span>
+                                </div>
                             </td>
                             <td class="timestamp">
                                 <i class="far fa-clock me-1"></i>
-                                {{ comment.created_at.strftime('%b %d, %Y') }}<br>
-                                <small class="text-muted">{{ comment.created_at.strftime('%I:%M %p') }}</small>
+                                {{ data.comment.created_at.strftime('%b %d, %Y') }}<br>
+                                <small class="text-muted">{{ data.comment.created_at.strftime('%I:%M %p') }}</small>
                             </td>
                         </tr>
+                        
+                        <!-- Nested Replies -->
+                        {% if data.replies %}
+                            {% for reply_data in data.replies %}
+                            <tr style="background-color: #fafafa; border-left: 4px solid #10b981;">
+                                <td class="ps-4">
+                                    <div class="user-name">
+                                        <i class="fas fa-reply me-2" style="color: #10b981;"></i>
+                                        {{ reply_data.user.name or 'Unknown User' }}
+                                    </div>
+                                    <small class="text-muted d-block mt-1">{{ reply_data.user.email }}</small>
+                                </td>
+                                <td class="ps-4">
+                                    <div class="comment-text text-muted">
+                                        <i class="fas fa-level-up-alt me-2" style="transform: rotate(90deg);"></i>
+                                        {{ reply_data.comment.body }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger" style="font-size: 0.75rem;">
+                                        <i class="fas fa-heart"></i> {{ reply_data.like_count }}
+                                    </span>
+                                </td>
+                                <td class="timestamp">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ reply_data.comment.created_at.strftime('%b %d, %Y') }}<br>
+                                    <small class="text-muted">{{ reply_data.comment.created_at.strftime('%I:%M %p') }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
