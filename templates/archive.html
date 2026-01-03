@@ -5,36 +5,69 @@
 
 {% block extra_css %}
 <style>
-    /* Gradient overlay for post card images */
-    .post-thumb.thumb-overlay::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100%;
+    /* Elegant gradient overlay for post card images */
+    .post-card-1 .post-thumb.thumb-overlay::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
         background: linear-gradient(
             to bottom,
-            rgba(0, 0, 0, 0.3) 0%,
-            rgba(0, 0, 0, 0.1) 30%,
-            rgba(0, 0, 0, 0) 50%
-        );
-        z-index: 1;
-        border-radius: 10px;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
+            rgba(0, 0, 0, 0.4) 0%,
+            rgba(0, 0, 0, 0.2) 25%,
+            rgba(0, 0, 0, 0.05) 50%,
+            rgba(0, 0, 0, 0) 70%
+        ) !important;
+        z-index: 1 !important;
+        border-radius: 10px !important;
+        pointer-events: none !important;
+        transition: all 0.3s ease !important;
     }
     
-    /* Slight enhancement on hover */
-    .post-card-1:hover .post-thumb.thumb-overlay::before {
-        opacity: 0.8;
+    /* Enhance on hover */
+    .post-card-1:hover .post-thumb.thumb-overlay::after {
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.5) 0%,
+            rgba(0, 0, 0, 0.3) 25%,
+            rgba(0, 0, 0, 0.1) 50%,
+            rgba(0, 0, 0, 0) 70%
+        ) !important;
     }
     
     /* Ensure icons and links stay above the overlay */
-    .post-thumb .img-link,
-    .post-thumb .top-right-icon {
-        position: relative;
-        z-index: 2;
+    .post-card-1 .post-thumb .img-link,
+    .post-card-1 .post-thumb .top-right-icon {
+        position: relative !important;
+        z-index: 2 !important;
+    }
+    
+    /* Also add overlay to featured carousel images */
+    .carausel-post-1 .thumb-overlay::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.5) 0%,
+            rgba(0, 0, 0, 0.3) 30%,
+            rgba(0, 0, 0, 0.1) 60%,
+            rgba(0, 0, 0, 0) 80%
+        ) !important;
+        z-index: 0 !important;
+        pointer-events: none !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Keep post content above overlay */
+    .carausel-post-1 .post-content-overlay {
+        position: relative !important;
+        z-index: 2 !important;
     }
 </style>
 {% endblock %}
