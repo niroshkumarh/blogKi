@@ -5,70 +5,7 @@
 
 {% block extra_css %}
 <style>
-    /* Elegant gradient overlay for post card images */
-    .post-card-1 .post-thumb.thumb-overlay::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.4) 0%,
-            rgba(0, 0, 0, 0.2) 25%,
-            rgba(0, 0, 0, 0.05) 50%,
-            rgba(0, 0, 0, 0) 70%
-        ) !important;
-        z-index: 1 !important;
-        border-radius: 10px !important;
-        pointer-events: none !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    /* Enhance on hover */
-    .post-card-1:hover .post-thumb.thumb-overlay::after {
-        background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.5) 0%,
-            rgba(0, 0, 0, 0.3) 25%,
-            rgba(0, 0, 0, 0.1) 50%,
-            rgba(0, 0, 0, 0) 70%
-        ) !important;
-    }
-    
-    /* Ensure icons and links stay above the overlay */
-    .post-card-1 .post-thumb .img-link,
-    .post-card-1 .post-thumb .top-right-icon {
-        position: relative !important;
-        z-index: 2 !important;
-    }
-    
-    /* Also add overlay to featured carousel images */
-    .carausel-post-1 .thumb-overlay::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.5) 0%,
-            rgba(0, 0, 0, 0.3) 30%,
-            rgba(0, 0, 0, 0.1) 60%,
-            rgba(0, 0, 0, 0) 80%
-        ) !important;
-        z-index: 0 !important;
-        pointer-events: none !important;
-        border-radius: 10px !important;
-    }
-    
-    /* Keep post content above overlay */
-    .carausel-post-1 .post-content-overlay {
-        position: relative !important;
-        z-index: 2 !important;
-    }
+    /* Gradient overlay is now inline for better compatibility */
 </style>
 {% endblock %}
 
@@ -101,9 +38,11 @@
                             {% for post in featured_posts %}
                             <div class="position-relative post-thumb">
                                 <div class="thumb-overlay img-hover-slide position-relative" style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-1.jpg') }})">
-                                    <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}"></a>
-                                    <span class="top-left-icon bg-warning"><i class="elegant-icon icon_star_alt"></i></span>
-                                    <div class="post-content-overlay text-white ml-30 mr-30 pb-30">
+                                    <!-- Gradient Overlay -->
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 80%); pointer-events: none; z-index: 1;"></div>
+                                    <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}" style="position: relative; z-index: 2;"></a>
+                                    <span class="top-left-icon bg-warning" style="position: relative; z-index: 3;"><i class="elegant-icon icon_star_alt"></i></span>
+                                    <div class="post-content-overlay text-white ml-30 mr-30 pb-30" style="position: relative; z-index: 3;">
                                         <div class="entry-meta meta-0 font-small mb-20">
                                             <a href="#"><span class="post-cat text-info text-uppercase">⭐ Featured</span></a>
                                         </div>
@@ -128,8 +67,10 @@
                 <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated" {% if loop.index > 2 %}data-wow-delay="{{ (loop.index - 2) * 0.2 }}s"{% endif %}>
                     <div class="post-card-1 border-radius-10 hover-up">
                         <div class="post-thumb thumb-overlay img-hover-slide position-relative" style="background-image: url({{ post.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }})">
-                            <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}"></a>
-                            <span class="top-right-icon bg-{% if loop.index == 1 %}warning{% else %}success{% endif %}"><i class="elegant-icon icon_star_alt"></i></span>
+                            <!-- Gradient Overlay -->
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0) 60%); border-radius: 10px; pointer-events: none; z-index: 1;"></div>
+                            <a class="img-link" href="{{ url_for('post_detail', slug=post.slug) }}" style="position: relative; z-index: 2;"></a>
+                            <span class="top-right-icon bg-{% if loop.index == 1 %}warning{% else %}success{% endif %}" style="position: relative; z-index: 3;"><i class="elegant-icon icon_star_alt"></i></span>
                         </div>
                         <div class="post-content p-30">
                             <div class="entry-meta meta-0 font-small mb-10">
