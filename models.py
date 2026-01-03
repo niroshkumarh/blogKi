@@ -92,8 +92,18 @@ class Post(db.Model):
         # self.related_posts_json = json.dumps(post_slugs) if post_slugs else None
     
     def get_view_count(self):
-        """Get unique viewers count"""
-        return db.session.query(ReadEvent.user_id).filter_by(post_id=self.id).distinct().count()
+        """Get unique viewers count (logged-in + anonymous)"""
+        unique_users = db.session.query(ReadEvent.user_id).filter(
+            ReadEvent.post_id == self.id,
+            ReadEvent.user_id.isnot(None)
+        ).distinct().count()
+        
+        unique_anon = db.session.query(ReadEvent.anon_id).filter(
+            ReadEvent.post_id == self.id,
+            ReadEvent.anon_id.isnot(None)
+        ).distinct().count()
+        
+        return unique_users + unique_anon
 
 
 class Comment(db.Model):
@@ -166,16 +176,29 @@ class CommentLike(db.Model):
 
 
 class ReadEvent(db.Model):
-    """ReadEvent model - tracking reading progress and time"""
+    """ReadEvent model - tracking reading progress and time (logged-in + anonymous)"""
     __tablename__ = 'read_events'
     
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)  # Nullable for anonymous
+    anon_id = db.Column(db.String(255), nullable=True, index=True)  # Cookie-based anonymous ID
+    ip_address = db.Column(db.String(45), nullable=True, index=True)  # IPv4/IPv6
+    user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
     percent = db.Column(db.Integer)  # scroll depth percentage (0-100)
     seconds = db.Column(db.Integer)  # time spent in seconds
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
     
+    def get_reader_label(self):
+        """Get a human-readable label for the reader"""
+        if self.user_id:
+            user = User.query.get(self.user_id)
+            return user.name or user.email if user else f'User {self.user_id}'
+        elif self.anon_id:
+            return f'Anon ({self.anon_id[:8]}...)'
+        else:
+            return 'Unknown'
+    
     def __repr__(self):
-        return f'<ReadEvent {self.id} User {self.user_id} Post {self.post_id}>'
+        return f'<ReadEvent {self.id} Post {self.post_id}>'
 

@@ -134,7 +134,12 @@
                 <i class="fas fa-eye"></i>
             </div>
             <div class="stat-label">Total Views</div>
-            <div class="stat-number">{{ total_views }}</div>
+            <div class="stat-number">
+                <a href="{{ url_for('admin.post_readers', post_id=post.id) }}" style="color: inherit; text-decoration: none;">
+                    {{ total_views }}
+                </a>
+            </div>
+            <small class="text-muted">Click to see details →</small>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
@@ -419,6 +424,77 @@
             <div class="empty-state">
                 <i class="fas fa-comment-slash"></i>
                 <p class="mb-0">No comments yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Read Events Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="table-container">
+            <div class="section-title">
+                <i class="fas fa-book-reader"></i>
+                Recent Read Events
+                <span class="badge-count ms-2">Last 20</span>
+            </div>
+            
+            {% if read_events %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Reader</th>
+                            <th>Progress</th>
+                            <th>Time (min)</th>
+                            <th>IP Address</th>
+                            <th>User Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in read_events[:20] %}
+                        <tr>
+                            <td class="timestamp">{{ event.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                            <td>
+                                <strong>{{ event.get_reader_label() }}</strong>
+                                {% if event.user_id %}
+                                <span class="badge bg-success" style="font-size: 10px;">Logged In</span>
+                                {% else %}
+                                <span class="badge bg-secondary" style="font-size: 10px;">Anonymous</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: {{ event.percent }}%; background: #2563eb; height: 100%;"></div>
+                                    </div>
+                                    <span style="font-size: 12px; color: #666;">{{ event.percent }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ (event.seconds / 60)|round(1) }}</td>
+                            <td><code style="font-size: 11px;">{{ event.ip_address or 'N/A' }}</code></td>
+                            <td>
+                                <small style="display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ event.user_agent }}">
+                                    {{ event.user_agent[:50] if event.user_agent else 'N/A' }}...
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('admin.post_readers', post_id=post.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list"></i> View All Read Events
+                </a>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p class="mb-0">No read events yet</p>
             </div>
             {% endif %}
         </div>

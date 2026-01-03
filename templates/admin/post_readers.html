@@ -1,0 +1,211 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<style>
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2563eb;
+    }
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+    }
+    .filter-bar {
+        background: #f9fafb;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .table-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .table thead th {
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        color: #374151;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 15px;
+    }
+    .table tbody tr {
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .table tbody tr:hover {
+        background: #f9fafb;
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+    .pagination {
+        margin-top: 20px;
+        justify-content: center;
+    }
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Readers Log: {{ post.title }}</h1>
+        <p class="text-muted mb-0">All read events for this post</p>
+    </div>
+    <a href="{{ url_for('admin.post_stats', post_id=post.id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Stats
+    </a>
+</div>
+
+<!-- Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Read Events</div>
+            <div class="stat-number">{{ total_events }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-label">Unique Logged-in Users</div>
+            <div class="stat-number">{{ unique_users }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-label">Unique Anonymous Readers</div>
+            <div class="stat-number">{{ unique_anon }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <label class="mb-0"><strong>Filter by Reader Type:</strong></label>
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('admin.post_readers', post_id=post.id, reader_type='all') }}" 
+           class="btn btn-sm {{ 'btn-primary' if reader_type == 'all' else 'btn-outline-primary' }}">
+            All
+        </a>
+        <a href="{{ url_for('admin.post_readers', post_id=post.id, reader_type='logged_in') }}" 
+           class="btn btn-sm {{ 'btn-primary' if reader_type == 'logged_in' else 'btn-outline-primary' }}">
+            Logged In
+        </a>
+        <a href="{{ url_for('admin.post_readers', post_id=post.id, reader_type='anonymous') }}" 
+           class="btn btn-sm {{ 'btn-primary' if reader_type == 'anonymous' else 'btn-outline-primary' }}">
+            Anonymous
+        </a>
+    </div>
+</div>
+
+<!-- Read Events Table -->
+<div class="table-container">
+    <h5 class="mb-3">Read Events</h5>
+    
+    {% if read_events %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Reader</th>
+                    <th>Progress</th>
+                    <th>Time Spent</th>
+                    <th>IP Address</th>
+                    <th>User Agent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in read_events %}
+                <tr>
+                    <td style="font-size: 13px; color: #666;">
+                        {{ event.created_at.strftime('%b %d, %Y') }}<br>
+                        <small style="color: #999;">{{ event.created_at.strftime('%H:%M:%S') }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ event.get_reader_label() }}</strong><br>
+                        {% if event.user_id %}
+                        <span class="badge bg-success" style="font-size: 10px;">Logged In</span>
+                        {% else %}
+                        <span class="badge bg-secondary" style="font-size: 10px;">Anonymous</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden; min-width: 80px;">
+                                <div style="width: {{ event.percent }}%; background: #2563eb; height: 100%;"></div>
+                            </div>
+                            <span style="font-size: 12px; color: #666; min-width: 35px;">{{ event.percent }}%</span>
+                        </div>
+                    </td>
+                    <td>{{ (event.seconds / 60)|round(1) }} min</td>
+                    <td><code style="font-size: 11px;">{{ event.ip_address or 'N/A' }}</code></td>
+                    <td>
+                        <small style="display: block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                               title="{{ event.user_agent }}">
+                            {{ event.user_agent if event.user_agent else 'N/A' }}
+                        </small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.post_readers', post_id=post.id, page=pagination.prev_num, reader_type=reader_type) }}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                        <a class="page-link" href="{{ url_for('admin.post_readers', post_id=post.id, page=page_num, reader_type=reader_type) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.post_readers', post_id=post.id, page=pagination.next_num, reader_type=reader_type) }}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="text-center text-muted p-5">
+        <i class="fas fa-book-open" style="font-size: 3rem; opacity: 0.3;"></i>
+        <p class="mt-3">No read events found</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

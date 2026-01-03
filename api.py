@@ -424,14 +424,9 @@ def toggle_comment_like(comment_id):
 
 
 @api_bp.route('/read-event/<int:post_id>', methods=['POST'])
-@login_required
 def track_read_event(post_id):
-    """Track reading progress"""
+    """Track reading progress (logged-in users + anonymous visitors)"""
     try:
-        user_id = session.get('user_id')
-        if not user_id:
-            return jsonify({'error': 'Not authenticated'}), 401
-        
         data = request.get_json()
         percent = data.get('percent', 0)
         seconds = data.get('seconds', 0)
@@ -442,10 +437,32 @@ def track_read_event(post_id):
         
         post = Post.query.get_or_404(post_id)
         
+        # Determine identity: logged-in user or anonymous
+        user_id = session.get('user_id')
+        anon_id = None
+        
+        if not user_id:
+            # Anonymous user - get anon_id from request
+            anon_id = data.get('anon_id')
+            if not anon_id:
+                return jsonify({'error': 'Missing anon_id for anonymous tracking'}), 400
+        
+        # Capture IP address (handle reverse proxy)
+        ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ip_address and ',' in ip_address:
+            # X-Forwarded-For can contain multiple IPs, take the first (client)
+            ip_address = ip_address.split(',')[0].strip()
+        
+        # Capture user agent
+        user_agent = request.headers.get('User-Agent', '')[:500]  # Limit to column size
+        
         # Create read event
         read_event = ReadEvent(
             post_id=post_id,
             user_id=user_id,
+            anon_id=anon_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
             percent=percent,
             seconds=seconds
         )

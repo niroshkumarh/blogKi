@@ -33,7 +33,18 @@ def dashboard():
     
     post_stats = []
     for post in posts:
-        views = db.session.query(ReadEvent.user_id).filter_by(post_id=post.id).distinct().count()
+        # Count unique viewers (logged-in + anonymous)
+        unique_users = db.session.query(ReadEvent.user_id).filter(
+            ReadEvent.post_id == post.id,
+            ReadEvent.user_id.isnot(None)
+        ).distinct().count()
+        
+        unique_anon = db.session.query(ReadEvent.anon_id).filter(
+            ReadEvent.post_id == post.id,
+            ReadEvent.anon_id.isnot(None)
+        ).distinct().count()
+        
+        views = unique_users + unique_anon
         likes = Like.query.filter_by(post_id=post.id).count()
         comments = Comment.query.filter_by(post_id=post.id).count()
         
@@ -251,14 +262,25 @@ def post_stats(post_id):
     
     post = Post.query.get_or_404(post_id)
     
-    # Get unique viewers
+    # Get unique viewers (logged-in + anonymous)
+    # Count distinct user_id (for logged-in) and anon_id (for anonymous)
+    unique_users = db.session.query(ReadEvent.user_id).filter(
+        ReadEvent.post_id == post_id,
+        ReadEvent.user_id.isnot(None)
+    ).distinct().count()
+    
+    unique_anon = db.session.query(ReadEvent.anon_id).filter(
+        ReadEvent.post_id == post_id,
+        ReadEvent.anon_id.isnot(None)
+    ).distinct().count()
+    
+    total_views = unique_users + unique_anon
+    
+    # Get logged-in viewers
     viewers = db.session.query(User).join(ReadEvent).filter(ReadEvent.post_id == post_id).distinct().all()
     
     # Get all read events
     read_events = ReadEvent.query.filter_by(post_id=post_id).order_by(ReadEvent.created_at.desc()).all()
-    
-    # Calculate stats
-    total_views = len(viewers)
     avg_completion = db.session.query(func.avg(ReadEvent.percent)).filter_by(post_id=post_id).scalar() or 0
     avg_time = db.session.query(func.avg(ReadEvent.seconds)).filter_by(post_id=post_id).scalar() or 0
     
@@ -317,12 +339,189 @@ def post_stats(post_id):
                           engagement_rate=engagement_rate)
 
 
+@admin_bp.route('/posts/<int:post_id>/readers')
+@admin_required
+def post_readers(post_id):
+    """Detailed reader log for a specific post"""
+    post = Post.query.get_or_404(post_id)
+    
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    
+    # Get filters
+    reader_type = request.args.get('reader_type', 'all')  # all, logged_in, anonymous
+    
+    # Build query
+    query = ReadEvent.query.filter_by(post_id=post_id).order_by(ReadEvent.created_at.desc())
+    
+    if reader_type == 'logged_in':
+        query = query.filter(ReadEvent.user_id.isnot(None))
+    elif reader_type == 'anonymous':
+        query = query.filter(ReadEvent.anon_id.isnot(None))
+    
+    # Paginate
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    read_events = pagination.items
+    
+    # Calculate stats
+    total_events = query.count()
+    unique_users = db.session.query(ReadEvent.user_id).filter(
+        ReadEvent.post_id == post_id,
+        ReadEvent.user_id.isnot(None)
+    ).distinct().count()
+    
+    unique_anon = db.session.query(ReadEvent.anon_id).filter(
+        ReadEvent.post_id == post_id,
+        ReadEvent.anon_id.isnot(None)
+    ).distinct().count()
+    
+    return render_template('admin/post_readers.html',
+                          post=post,
+                          read_events=read_events,
+                          pagination=pagination,
+                          total_events=total_events,
+                          unique_users=unique_users,
+                          unique_anon=unique_anon,
+                          reader_type=reader_type)
+
+
 @admin_bp.route('/users')
 @admin_required
 def users_list():
     """List all users"""
     users = User.query.order_by(User.last_login_at.desc()).all()
     return render_template('admin/users_list.html', users=users)
+
+
+@admin_bp.route('/readers')
+@admin_required
+def readers_list():
+    """Global readers view with aggregation"""
+    from sqlalchemy import func, case
+    
+    # Get pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    
+    # Get filters
+    post_filter = request.args.get('post_id', type=int)
+    
+    # Build reader aggregation query
+    # We need to group by either user_id or anon_id
+    
+    # Get logged-in users with stats
+    logged_in_readers = db.session.query(
+        User.id.label('user_id'),
+        User.email.label('email'),
+        User.name.label('name'),
+        func.count(func.distinct(ReadEvent.post_id)).label('posts_read'),
+        func.count(ReadEvent.id).label('total_events'),
+        func.max(ReadEvent.created_at).label('last_seen'),
+        func.min(ReadEvent.created_at).label('first_seen')
+    ).join(ReadEvent, ReadEvent.user_id == User.id)
+    
+    if post_filter:
+        logged_in_readers = logged_in_readers.filter(ReadEvent.post_id == post_filter)
+    
+    logged_in_readers = logged_in_readers.group_by(User.id, User.email, User.name).all()
+    
+    # Get anonymous readers with stats
+    anon_readers = db.session.query(
+        ReadEvent.anon_id.label('anon_id'),
+        func.count(func.distinct(ReadEvent.post_id)).label('posts_read'),
+        func.count(ReadEvent.id).label('total_events'),
+        func.max(ReadEvent.created_at).label('last_seen'),
+        func.min(ReadEvent.created_at).label('first_seen'),
+        func.max(ReadEvent.ip_address).label('ip_address')
+    ).filter(ReadEvent.anon_id.isnot(None))
+    
+    if post_filter:
+        anon_readers = anon_readers.filter(ReadEvent.post_id == post_filter)
+    
+    anon_readers = anon_readers.group_by(ReadEvent.anon_id).all()
+    
+    # Combine and format
+    readers = []
+    
+    for reader in logged_in_readers:
+        readers.append({
+            'type': 'logged_in',
+            'user_id': reader.user_id,
+            'label': reader.name or reader.email,
+            'email': reader.email,
+            'posts_read': reader.posts_read,
+            'total_events': reader.total_events,
+            'last_seen': reader.last_seen,
+            'first_seen': reader.first_seen,
+            'ip_address': None
+        })
+    
+    for reader in anon_readers:
+        readers.append({
+            'type': 'anonymous',
+            'anon_id': reader.anon_id,
+            'label': f'Anon ({reader.anon_id[:8]}...)',
+            'posts_read': reader.posts_read,
+            'total_events': reader.total_events,
+            'last_seen': reader.last_seen,
+            'first_seen': reader.first_seen,
+            'ip_address': reader.ip_address
+        })
+    
+    # Sort by last_seen desc
+    readers.sort(key=lambda x: x['last_seen'], reverse=True)
+    
+    # Manual pagination
+    total = len(readers)
+    start = (page - 1) * per_page
+    end = start + per_page
+    readers_page = readers[start:end]
+    
+    # Get all posts for filter dropdown
+    all_posts = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).all()
+    
+    return render_template('admin/readers.html',
+                          readers=readers_page,
+                          page=page,
+                          per_page=per_page,
+                          total=total,
+                          all_posts=all_posts,
+                          post_filter=post_filter)
+
+
+@admin_bp.route('/readers/<reader_type>/<reader_id>')
+@admin_required
+def reader_detail(reader_type, reader_id):
+    """Detailed view of what a specific reader has read"""
+    if reader_type == 'user':
+        user = User.query.get_or_404(reader_id)
+        reader_label = user.name or user.email
+        read_events = ReadEvent.query.filter_by(user_id=reader_id).order_by(ReadEvent.created_at.desc()).all()
+    else:  # anonymous
+        reader_label = f'Anonymous ({reader_id[:8]}...)'
+        read_events = ReadEvent.query.filter_by(anon_id=reader_id).order_by(ReadEvent.created_at.desc()).all()
+    
+    # Group by post
+    posts_read = {}
+    for event in read_events:
+        if event.post_id not in posts_read:
+            posts_read[event.post_id] = {
+                'post': event.post,
+                'events': [],
+                'max_percent': 0,
+                'total_time': 0
+            }
+        posts_read[event.post_id]['events'].append(event)
+        posts_read[event.post_id]['max_percent'] = max(posts_read[event.post_id]['max_percent'], event.percent or 0)
+        posts_read[event.post_id]['total_time'] += event.seconds or 0
+    
+    return render_template('admin/reader_detail.html',
+                          reader_type=reader_type,
+                          reader_id=reader_id,
+                          reader_label=reader_label,
+                          posts_read=posts_read,
+                          total_events=len(read_events))
 
 
 @admin_bp.route('/comments')
