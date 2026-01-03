@@ -281,6 +281,64 @@ def users_list():
     return render_template('admin/users_list.html', users=users)
 
 
+@admin_bp.route('/comments')
+@admin_required
+def comments_list():
+    """List all comments with nested structure and moderation options"""
+    from models import Comment, CommentLike
+    
+    # Get all top-level comments (no parent)
+    comments = Comment.query.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all()
+    
+    # Build comment data with stats
+    comment_data = []
+    for comment in comments:
+        data = {
+            'comment': comment,
+            'user': comment.user,
+            'post': comment.post,
+            'like_count': comment.get_like_count(),
+            'reply_count': comment.get_reply_count(),
+            'replies': []
+        }
+        
+        # Get all replies
+        for reply in comment.get_all_replies():
+            reply_data = {
+                'comment': reply,
+                'user': reply.user,
+                'like_count': reply.get_like_count()
+            }
+            data['replies'].append(reply_data)
+        
+        comment_data.append(data)
+    
+    # Get stats
+    total_comments = Comment.query.count()
+    total_likes = CommentLike.query.count()
+    
+    return render_template('admin/comments_list.html', 
+                         comment_data=comment_data,
+                         total_comments=total_comments,
+                         total_likes=total_likes)
+
+
+@admin_bp.route('/comments/<int:comment_id>/delete', methods=['POST'])
+@admin_required
+def delete_comment_admin(comment_id):
+    """Delete a comment (admin action)"""
+    try:
+        from models import Comment
+        comment = Comment.query.get_or_404(comment_id)
+        db.session.delete(comment)
+        db.session.commit()
+        flash('Comment deleted successfully', 'success')
+    except Exception as e:
+        flash(f'Error deleting comment: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.comments_list'))
+
+
 @admin_bp.route('/upload-image', methods=['POST'])
 @admin_required
 def upload_image():
