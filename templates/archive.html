@@ -70,6 +70,11 @@
                                 <h5 class="post-title mb-20 font-weight-900">
                                     <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
                                 </h5>
+                                {% if post.excerpt %}
+                                <p class="post-excerpt mb-15 text-muted" style="font-size: 14px; line-height: 1.6;">
+                                    {{ post.excerpt[:120] }}{% if post.excerpt|length > 120 %}...{% endif %}
+                                </p>
+                                {% endif %}
                                 <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
                                     <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
                                     {% if post.read_time %}
