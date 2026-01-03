@@ -33,6 +33,11 @@
 /* small mobile :768px. */
 @media (max-width:767px){
     .comment-form .name{padding-right:0px;margin-bottom:1rem;}
+    
+    /* Featured Carousel Tablet Fixes */
+    .carausel-post-1 .img-hover-slide{min-height:380px!important;}
+    .carausel-post-1 .post-content-overlay{margin-left:20px!important;margin-right:20px!important;}
+    .carausel-post-1 .post-content-overlay .post-title{font-size:1.5em!important;line-height:1.4!important;}
 }
 
 /* Large Mobile :480px. */
@@ -53,6 +58,21 @@
     .featured-slider-2-items .post-thumb .thumb-overlay{min-height:450px;}
     .featured-slider-2 .post-content-overlay .post-title{max-width:100%;}
     .featured-slider-2-nav{display:none}
+    
+    /* Featured Carousel Mobile Fixes */
+    .carausel-post-1{margin-bottom:20px!important;}
+    .carausel-post-1 .img-hover-slide{min-height:350px!important;}
+    .carausel-post-1 .post-content-overlay{margin-left:15px!important;margin-right:15px!important;padding-bottom:15px!important;}
+    .carausel-post-1 .post-content-overlay .post-title{font-size:1.3em!important;line-height:1.3!important;margin-bottom:10px!important;}
+    .carausel-post-1 .post-content-overlay .entry-meta{font-size:11px!important;}
+    .carausel-post-1 .post-content-overlay .entry-meta.meta-0{margin-bottom:15px!important;}
+    .carausel-post-1 .arrow-cover{bottom:15px!important;right:10px!important;}
+    .carausel-post-1 .arrow-cover button i{font-size:18px!important;}
+    .carausel-post-1 .top-left-icon{top:15px!important;left:15px!important;padding:8px 12px!important;font-size:14px!important;}
+    /* Slick dots spacing for mobile */
+    .carausel-post-1 .slick-dots{bottom:10px!important;padding-bottom:5px!important;}
+    .carausel-post-1 .slick-dots li{margin:0 3px!important;}
+    .carausel-post-1 .slick-dots li button{width:8px!important;height:8px!important;}
 }
 
 /*Masonry layout*/

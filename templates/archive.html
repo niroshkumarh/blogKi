@@ -5,8 +5,6 @@
 
 {% block extra_css %}
 <style>
-    /* Gradient overlay is now inline for better compatibility */
-    
     /* Force featured carousel content to bottom (override any conflicting styles) */
     .carausel-post-1 .post-content-overlay {
         position: absolute !important;
@@ -18,6 +16,108 @@
     
     .carausel-post-1:hover .post-content-overlay {
         bottom: 15px !important;
+    }
+    
+    /* Carousel Navigation Arrows */
+    .carausel-post-1 .slick-prev,
+    .carausel-post-1 .slick-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 99;
+        background: rgba(0,0,0,0.5);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .carausel-post-1 .slick-prev {
+        left: 15px;
+    }
+    
+    .carausel-post-1 .slick-next {
+        right: 15px;
+    }
+    
+    .carausel-post-1 .slick-prev:hover,
+    .carausel-post-1 .slick-next:hover {
+        background: rgba(0,0,0,0.8);
+    }
+    
+    .carausel-post-1 .slick-prev i,
+    .carausel-post-1 .slick-next i {
+        color: white;
+        font-size: 22px;
+    }
+    
+    /* Carousel Dots */
+    .carausel-post-1 .slick-dots {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex !important;
+        gap: 8px;
+    }
+    
+    .carausel-post-1 .slick-dots li {
+        margin: 0;
+        width: 10px;
+        height: 10px;
+    }
+    
+    .carausel-post-1 .slick-dots li button {
+        border: 2px solid white;
+        background: transparent;
+        border-radius: 50%;
+        width: 10px;
+        height: 10px;
+        padding: 0;
+        cursor: pointer;
+        font-size: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .carausel-post-1 .slick-dots li.slick-active button {
+        background: white;
+    }
+    
+    /* Additional mobile optimizations */
+    @media (max-width: 768px) {
+        .carausel-post-1 .post-content-overlay {
+            padding-bottom: 55px !important; /* Extra space for dots */
+        }
+        
+        .carausel-post-1 .slick-dots {
+            bottom: 15px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .carausel-post-1 .post-content-overlay {
+            padding-bottom: 50px !important; /* Extra space for dots */
+        }
+        
+        .carausel-post-1 .slick-dots {
+            bottom: 12px;
+        }
+        
+        .carausel-post-1 .slick-dots li {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .carausel-post-1 .slick-dots li button {
+            width: 8px;
+            height: 8px;
+        }
     }
 </style>
 {% endblock %}
@@ -44,9 +144,8 @@
                 
                 {% if featured_posts|length > 0 %}
                 <!-- Featured Carousel - Only shows if featured posts exist -->
-                <div class="col-lg-8 mb-30">
+                <div class="col-lg-8 col-md-12 mb-30">
                     <div class="carausel-post-1 hover-up border-radius-10 overflow-hidden transition-normal position-relative wow fadeInUp animated">
-                        <div class="arrow-cover"></div>
                         <div class="slide-fade">
                             {% for post in featured_posts %}
                             <div class="position-relative post-thumb">
@@ -172,26 +271,52 @@
 // ========================================
 
 $(document).ready(function() {
-    // Only initialize if featured carousel exists
-    if ($('.slide-fade').length > 0) {
-        $('.slide-fade').slick({
-            dots: true,
-            infinite: true,
-            speed: 800,
-            fade: true,
-            cssEase: 'ease-in-out',
-            autoplay: true,
-            autoplaySpeed: 5000,  // 5 seconds per slide
-            arrows: true,
-            pauseOnHover: true,
-            pauseOnFocus: true,
-            adaptiveHeight: true
-        });
+    // Wait for complete DOM load
+    setTimeout(function() {
+        var $slideEl = $('.slide-fade');
         
-        console.log('✅ Featured carousel initialized with auto-scroll');
-    } else {
-        console.log('ℹ️ No featured posts - carousel skipped');
-    }
+        console.log('Checking carousel elements...');
+        console.log('Carousel container:', $slideEl.length);
+        console.log('Post thumbs:', $slideEl.find('.post-thumb').length);
+        
+        // Only initialize if featured carousel exists and has content
+        if ($slideEl.length > 0 && $slideEl.find('.post-thumb').length > 0) {
+            try {
+                // Ensure the element is visible
+                $slideEl.css('visibility', 'visible');
+                
+                // Initialize with minimal config to avoid errors
+                $slideEl.slick({
+                    dots: true,
+                    infinite: true,
+                    speed: 800,
+                    fade: true,
+                    cssEase: 'ease-in-out',
+                    autoplay: true,
+                    autoplaySpeed: 5000,
+                    arrows: false,
+                    pauseOnHover: true,
+                    pauseOnFocus: false,
+                    adaptiveHeight: false,
+                    accessibility: false,
+                    draggable: true,
+                    swipe: true,
+                    touchMove: true,
+                    waitForAnimate: false,
+                    lazyLoad: 'ondemand'
+                });
+                
+                console.log('✅ Featured carousel initialized successfully');
+            } catch (error) {
+                console.error('❌ Carousel initialization error:', error);
+                // Fallback: at least show the first slide
+                $slideEl.find('.post-thumb:first').show();
+                $slideEl.find('.post-thumb:not(:first)').hide();
+            }
+        } else {
+            console.log('ℹ️ No featured posts - carousel element:', $slideEl.length, 'posts:', $slideEl.find('.post-thumb').length);
+        }
+    }, 200);
 });
 </script>
 {% endblock %}
