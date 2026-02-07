@@ -1,0 +1,489 @@
+/* ========================================
+   HARVARD MAGAZINE THEME
+   Clean, elegant magazine-style design
+   ======================================== */
+
+/* Import Harvard fonts */
+@import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100;400;500;600&family=Crimson+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* Typography - Harvard uses Commissioner + Crimson Text */
+body {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #222;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Commissioner', Arial, sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #000;
+}
+
+.post-title a {
+    color: #000 !important;
+    font-weight: 600;
+}
+
+.post-title a:hover {
+    color: #c41230 !important; /* Harvard crimson */
+}
+
+/* HARVARD HEADER */
+.harvard-header {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.harvard-header-top {
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
+
+.harvard-social-icons a {
+    color: #666;
+    margin-right: 15px;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.harvard-social-icons a:hover {
+    color: #c41230;
+}
+
+.harvard-account-menu {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+}
+
+.harvard-account-menu a {
+    color: #333;
+    text-decoration: none;
+}
+
+.harvard-account-menu a:hover {
+    color: #c41230;
+}
+
+.harvard-header-branding {
+    background: #fff;
+}
+
+.harvard-logo {
+    max-height: 50px;
+}
+
+.harvard-tagline {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    color: #666;
+}
+
+.harvard-tagline em {
+    font-style: italic;
+}
+
+.harvard-header-nav {
+    background: #fff;
+    border-top: 1px solid #eee;
+    border-bottom: 2px solid #c41230;
+}
+
+.harvard-main-nav {
+    padding: 0;
+}
+
+.harvard-main-nav .nav {
+    flex-wrap: wrap;
+}
+
+.harvard-main-nav .nav-link {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    padding: 12px 15px;
+}
+
+.harvard-main-nav .nav-link:hover {
+    color: #c41230;
+    background: #f9f9f9;
+}
+
+.harvard-main-nav .dropdown-menu {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.harvard-main-nav .dropdown-item {
+    padding: 8px 20px;
+    color: #333;
+}
+
+.harvard-main-nav .dropdown-item:hover {
+    background: #f9f9f9;
+    color: #c41230;
+}
+
+/* Mobile menu toggle (like Harvard's) */
+.harvard-header-nav .mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+    color: #333;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.harvard-header-nav .mobile-menu-toggle i {
+    margin-right: 5px;
+}
+
+@media (max-width: 991px) {
+    .harvard-header-nav .mobile-menu-toggle {
+        display: block;
+        margin: 0 auto;
+    }
+    
+    .harvard-main-nav .nav {
+        display: none;
+        flex-direction: column;
+        background: #fff;
+        padding: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .harvard-main-nav .nav.show {
+        display: flex;
+    }
+    
+    .harvard-main-nav .nav-item {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .harvard-main-nav .nav-link {
+        display: block;
+        padding: 12px 0;
+    }
+    
+    .harvard-main-nav .dropdown-menu {
+        position: static;
+        float: none;
+        border: none;
+        box-shadow: none;
+        background: #f9f9f9;
+        margin-left: 15px;
+    }
+}
+
+/* Container - wider for magazine feel */
+.container {
+    max-width: 1200px;
+}
+
+/* Homepage hero section */
+.post-card-1 {
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.post-card-1:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: none;
+}
+
+.post-card-1 .post-title {
+    font-size: 28px;
+    line-height: 1.3;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.post-card-1 .post-content p {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #555;
+}
+
+/* Category labels - Harvard style */
+.post-cat {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c41230 !important;
+}
+
+.text-success, .post-cat.text-success {
+    color: #c41230 !important;
+}
+
+.text-warning, .post-cat.text-warning {
+    color: #c41230 !important;
+}
+
+/* Meta information */
+.entry-meta {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 12px;
+    color: #888;
+    text-transform: none;
+}
+
+/* Widget headers - Harvard Magazine style */
+.widget-header-2 h5 {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 15px;
+}
+
+.bt-1 {
+    border-color: #c41230 !important;
+    border-width: 2px !important;
+}
+
+/* Sidebar widgets */
+.sidebar-widget {
+    background: transparent;
+    border: none;
+}
+
+.widget-latest-posts .list-post li {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.widget-latest-posts .list-post li:last-child {
+    border-bottom: none;
+}
+
+.post-thumb-80 {
+    border: 1px solid #e5e5e5;
+}
+
+/* The Magazine widget */
+.widget_categories a {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.widget_categories a:hover {
+    color: #c41230;
+}
+
+.widget_categories .font-weight-900 {
+    font-size: 17px;
+    color: #000;
+}
+
+/* Featured section */
+.post-card-1 .post-thumb {
+    height: 220px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* Icons - subtle style */
+.top-left-icon, .top-right-icon {
+    background: #c41230 !important;
+}
+
+.elegant-icon {
+    font-size: 14px;
+}
+
+/* Audio player styling */
+audio {
+    width: 100%;
+    height: 40px;
+    outline: none;
+}
+
+audio::-webkit-media-controls-panel {
+    background-color: #f8f8f8;
+}
+
+/* Archive posts section */
+.list-post .post-title {
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+/* Footer - Harvard style */
+footer {
+    background: #f8f8f8 !important;
+    border-top: 1px solid #ddd;
+}
+
+.footer-copy-right {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Buttons */
+.btn-primary {
+    background: #c41230;
+    border-color: #c41230;
+}
+
+.btn-primary:hover {
+    background: #a00f26;
+    border-color: #a00f26;
+}
+
+/* Hover effects - subtle */
+.hover-up:hover {
+    transform: translateY(-2px);
+}
+
+.hover-up-2:hover {
+    transform: translateX(3px);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+    }
+    
+    .post-card-1 .post-title {
+        font-size: 22px;
+    }
+    
+    .widget-header-2 h5 {
+        font-size: 20px;
+    }
+}
+
+/* Google Fonts import for Crimson Text */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+
+/* Override NewsBoard bright colors */
+.bg-primary {
+    background: #c41230 !important;
+}
+
+.text-primary {
+    color: #c41230 !important;
+}
+
+.border-color-1 {
+    border-color: #e5e5e5 !important;
+}
+
+/* Clean card design */
+.post-card-1.border-radius-10 {
+    border-radius: 4px;
+}
+
+.border-radius-10 {
+    border-radius: 4px;
+}
+
+.border-radius-5 {
+    border-radius: 3px;
+}
+
+/* Typography refinements */
+.font-weight-900 {
+    font-weight: 600 !important;
+}
+
+.font-small {
+    font-size: 12px;
+}
+
+.font-x-small {
+    font-size: 11px;
+}
+
+/* Archive header */
+.archive-header h2 {
+    font-size: 36px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+}
+
+.breadcrumb {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+}
+
+/* Post detail page */
+.entry-header .entry-title {
+    font-size: 42px;
+    line-height: 1.2;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+.entry-main-content {
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+}
+
+.entry-main-content h1,
+.entry-main-content h2,
+.entry-main-content h3 {
+    font-weight: 600;
+    color: #000;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.entry-main-content h2 {
+    font-size: 32px;
+}
+
+.entry-main-content h3 {
+    font-size: 26px;
+}
+
+.entry-main-content p {
+    margin-bottom: 20px;
+}
+
+.entry-main-content a {
+    color: #c41230;
+    text-decoration: underline;
+}
+
+.entry-main-content a:hover {
+    color: #a00f26;
+}
+
+/* Clean, elegant spacing */
+.pt-50 {
+    padding-top: 40px !important;
+}
+
+.pb-30 {
+    padding-bottom: 30px !important;
+}
+
+.mb-40 {
+    margin-bottom: 35px !important;
+}
+
+/* Preloader - Harvard colors */
+.preloader .circle {
+    border-top-color: #c41230;
+}

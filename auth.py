@@ -214,7 +214,7 @@ def callback():
         
         # If normal user, redirect to blog archive
         flash(f'Welcome, {user.name}!', 'success')
-        return redirect(url_for('archive', month_key='2026-01'))
+        return redirect(url_for('index'))
         
     except Exception as e:
         current_app.logger.error(f"Auth callback error: {e}")

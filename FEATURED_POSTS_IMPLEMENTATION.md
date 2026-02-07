@@ -428,3 +428,5 @@ ALTER TABLE post ADD COLUMN is_featured BOOLEAN DEFAULT FALSE;
 
 *Last Updated: January 3, 2026*
 
+
+

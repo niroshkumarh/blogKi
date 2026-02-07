@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Videos - HORIZON{% endblock %}
+
+{% block content %}
+<div class="container pt-50 pb-50">
+    <!-- Page Header -->
+    <div class="row mb-40">
+        <div class="col-12">
+            <h1 class="page-title">Videos</h1>
+            <p class="page-subtitle">Watch our latest video content</p>
+        </div>
+    </div>
+
+    <!-- Featured Videos -->
+    {% if featured_videos|length > 0 %}
+    <div class="row mb-40">
+        <div class="col-12">
+            <h2 class="section-heading mb-30">Featured Videos</h2>
+        </div>
+        {% for video in featured_videos %}
+        <div class="col-lg-4 col-md-6 mb-30">
+            <article class="video-card">
+                <div class="video-card-thumb mb-15">
+                    <a href="{{ url_for('video_detail', slug=video.slug) }}">
+                        {% if video.thumbnail_path %}
+                        <img src="{{ video.thumbnail_path }}" alt="{{ video.title }}" class="img-fluid">
+                        {% else %}
+                        <div class="video-placeholder">
+                            <i class="fas fa-play-circle fa-4x"></i>
+                        </div>
+                        {% endif %}
+                        <span class="video-badge"><i class="fas fa-play"></i> Play</span>
+                    </a>
+                </div>
+                {% if video.category %}
+                <div class="video-card-category mb-5">{{ video.category }}</div>
+                {% endif %}
+                <h4 class="video-card-title">
+                    <a href="{{ url_for('video_detail', slug=video.slug) }}">{{ video.title }}</a>
+                </h4>
+                {% if video.description %}
+                <p class="video-card-desc">{{ video.description[:120] }}{% if video.description|length > 120 %}...{% endif %}</p>
+                {% endif %}
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- All Videos -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="section-heading mb-30">All Videos</h2>
+        </div>
+        {% for video in videos %}
+        <div class="col-lg-4 col-md-6 mb-30">
+            <article class="video-card">
+                <div class="video-card-thumb mb-15">
+                    <a href="{{ url_for('video_detail', slug=video.slug) }}">
+                        {% if video.thumbnail_path %}
+                        <img src="{{ video.thumbnail_path }}" alt="{{ video.title }}" class="img-fluid">
+                        {% else %}
+                        <div class="video-placeholder">
+                            <i class="fas fa-play-circle fa-4x"></i>
+                        </div>
+                        {% endif %}
+                        <span class="video-badge"><i class="fas fa-play"></i></span>
+                    </a>
+                </div>
+                {% if video.category %}
+                <div class="video-card-category mb-5">{{ video.category }}</div>
+                {% endif %}
+                <h5 class="video-card-title">
+                    <a href="{{ url_for('video_detail', slug=video.slug) }}">{{ video.title }}</a>
+                </h5>
+                <div class="video-card-meta">
+                    {{ video.published_at.strftime('%B %d, %Y') if video.published_at else '' }}
+                </div>
+            </article>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <p class="text-center text-muted">No videos available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

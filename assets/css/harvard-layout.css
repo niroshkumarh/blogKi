@@ -1,0 +1,512 @@
+/* ========================================
+   HARVARD MAGAZINE LAYOUT
+   Exact layout matching harvardmagazine.com
+   ======================================== */
+
+/* Import Harvard fonts */
+@import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100;400;500;600&family=Crimson+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* Base Typography */
+body {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #222;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Commissioner', 'Arial', sans-serif;
+    font-weight: 600;
+    color: #000;
+}
+
+/* Section Headings */
+.section-heading {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #000;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #c41230;
+}
+
+/* LATEST NEWS Section (Left Column) */
+.latest-news-section {
+    background: #fff;
+}
+
+.latest-news-item {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+
+.latest-news-item:last-child {
+    border-bottom: none;
+}
+
+.latest-news-thumb {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+}
+
+.latest-news-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.latest-news-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 8px;
+}
+
+.latest-news-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.latest-news-title a:hover {
+    color: #c41230;
+}
+
+.latest-news-excerpt {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.latest-news-meta .post-cat {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c41230;
+}
+
+.read-more-link {
+    display: inline-block;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #c41230;
+    text-decoration: none;
+    margin-top: 15px;
+}
+
+.read-more-link:hover {
+    text-decoration: underline;
+}
+
+/* MAIN FEATURED Section (Center Column) */
+.main-featured-section {
+    background: #fff;
+}
+
+.main-featured-thumb {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+}
+
+.main-featured-thumb img {
+    width: 100%;
+    height: auto;
+}
+
+.main-featured-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.main-featured-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.main-featured-title a:hover {
+    color: #c41230;
+}
+
+.main-featured-excerpt {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #555;
+}
+
+/* FEATURED SIDEBAR (Right Column) */
+.featured-sidebar {
+    background: #fff;
+}
+
+.featured-sidebar-item {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.featured-sidebar-item:last-child {
+    border-bottom: none;
+}
+
+.featured-sidebar-thumb {
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+}
+
+.featured-sidebar-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.featured-sidebar-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.featured-sidebar-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.featured-sidebar-title a:hover {
+    color: #c41230;
+}
+
+/* EXPLORE MORE Section */
+.explore-more-section {
+    border-top: 1px solid #ddd;
+    padding-top: 40px;
+}
+
+.explore-card {
+    background: #fff;
+}
+
+.explore-card-thumb {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.explore-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.explore-card-category {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c41230;
+}
+
+.explore-card-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.explore-card-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.explore-card-title a:hover {
+    color: #c41230;
+}
+
+/* THE MAGAZINE Section */
+.magazine-section {
+    background: #f9f9f9;
+    padding: 20px;
+}
+
+.read-past-link {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #c41230;
+    text-decoration: none;
+}
+
+.read-past-link:hover {
+    text-decoration: underline;
+}
+
+.magazine-covers {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.magazine-cover-item {
+    flex: 0 0 120px;
+}
+
+.magazine-cover-placeholder {
+    width: 120px;
+    height: 160px;
+    background: linear-gradient(135deg, #c41230 0%, #8b0000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+}
+
+.magazine-cover-placeholder .cover-text {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+}
+
+/* AUDIO Section */
+.audio-section {
+    background: #f9f9f9;
+    padding: 20px;
+}
+
+.audio-item {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #eee;
+}
+
+.audio-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+audio {
+    width: 100%;
+    height: 35px;
+}
+
+/* FROM OUR ARCHIVES Section */
+.archives-section {
+    border-top: 1px solid #ddd;
+    padding-top: 40px;
+}
+
+.archive-card {
+    background: #fff;
+}
+
+.archive-card-thumb {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.archive-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.archive-card-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.archive-card-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.archive-card-title a:hover {
+    color: #c41230;
+}
+
+.archive-card-meta {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 12px;
+    color: #888;
+}
+
+/* VIDEO CARDS */
+.video-card-thumb {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.video-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+}
+
+.video-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(196, 18, 48, 0.9);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.video-card-category {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c41230;
+}
+
+.video-card-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.video-card-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.video-card-title a:hover {
+    color: #c41230;
+}
+
+/* PODCAST CARDS */
+.podcast-card-thumb {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+}
+
+.podcast-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.podcast-card-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.podcast-card-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.podcast-card-title a:hover {
+    color: #c41230;
+}
+
+.podcast-card-guests {
+    font-family: 'Commissioner', sans-serif;
+    color: #666;
+    font-size: 14px;
+}
+
+.podcast-episode-item {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.podcast-episode-item audio {
+    margin-top: 10px;
+}
+
+/* PAGE HEADERS */
+.page-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 42px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .main-featured-title {
+        font-size: 24px;
+    }
+    
+    .latest-news-section,
+    .featured-sidebar {
+        margin-bottom: 30px;
+    }
+    
+    .page-title {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 767px) {
+    .magazine-covers {
+        justify-content: flex-start;
+    }
+    
+    .magazine-cover-item {
+        flex: 0 0 100px;
+    }
+    
+    .magazine-cover-placeholder {
+        width: 100px;
+        height: 140px;
+    }
+    
+    .video-card-thumb,
+    .video-placeholder {
+        height: 180px;
+    }
+    
+    .podcast-card-thumb {
+        height: 200px;
+    }
+}

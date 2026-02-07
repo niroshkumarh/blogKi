@@ -394,3 +394,5 @@ Use this checklist to verify the upgrade:
 *For quick reference, see EDITOR_QUICK_REFERENCE.md*
 *For before/after comparison, see EDITOR_UPGRADE_SUMMARY.md*
 
+
+

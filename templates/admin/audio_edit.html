@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit Audio' if episode else 'New Audio' }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit Audio Episode' if episode else 'New Audio Episode' }}</h1>
+    <a href="{{ url_for('admin.audio_list') }}" class="btn btn-secondary">Back to Audio</a>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="title">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ episode.title if episode else '' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="slug">Slug *</label>
+                        <input type="text" class="form-control" id="slug" name="slug" value="{{ episode.slug if episode else '' }}" required>
+                        <small class="form-text text-muted">URL-friendly unique id (e.g. `january-issue-audio-01`).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4">{{ episode.description if episode else '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mp3_file">{{ 'Replace MP3' if episode else 'MP3 File *' }}</label>
+                        <input type="file" class="form-control-file" id="mp3_file" name="mp3_file" accept="audio/mpeg,audio/mp3,.mp3" {% if not episode %}required{% endif %}>
+                        {% if episode %}
+                        <small class="form-text text-muted">Current: <code>{{ episode.mp3_path }}</code></small>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cover_image">Cover Image (optional)</label>
+                        <input type="file" class="form-control-file" id="cover_image" name="cover_image" accept="image/*">
+                        {% if episode and episode.cover_image_path %}
+                        <div class="mt-2">
+                            <img src="{{ episode.cover_image_path }}" alt="Cover" style="max-width: 220px; border-radius: 6px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Publish</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="draft" {{ 'selected' if episode and episode.status == 'draft' else '' }}>Draft</option>
+                            <option value="published" {{ 'selected' if (not episode) or (episode.status == 'published') else '' }}>Published</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="is_featured" name="is_featured" {{ 'checked' if episode and episode.is_featured else '' }}>
+                            <label class="custom-control-label" for="is_featured">
+                                <strong>Featured Audio</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-save"></i> {{ 'Update' if episode else 'Create' }} Audio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+// Auto-generate slug from title
+document.getElementById('title')?.addEventListener('blur', function() {
+    const slugEl = document.getElementById('slug');
+    if (!slugEl.value) {
+        slugEl.value = this.value
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+});
+</script>
+{% endblock %}
+

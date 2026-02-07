@@ -4,7 +4,7 @@ Admin module - Dashboard and post editor
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from werkzeug.utils import secure_filename
-from models import db, Post, User, Comment, Like, ReadEvent
+from models import db, Post, User, Comment, Like, ReadEvent, AudioEpisode, Series, Video, Podcast
 from auth import admin_required
 from datetime import datetime
 from sqlalchemy import func
@@ -16,6 +16,12 @@ def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+
+
+def allowed_audio_file(filename):
+    """Check if audio file extension is allowed"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_AUDIO_EXTENSIONS', {'mp3'})
 
 
 @admin_bp.route('/')
@@ -140,7 +146,8 @@ def post_new():
                 read_time=read_time,
                 is_featured=is_featured,
                 hero_image_path=hero_image_path,
-                published_at=published_at
+                published_at=published_at,
+                created_by_id=session.get('user_id')  # Track who created
             )
             
             # Set related posts
@@ -222,6 +229,7 @@ def post_edit(post_id):
             post.set_related_posts(related_posts if related_posts else None)
             
             post.updated_at = datetime.utcnow()
+            post.updated_by_id = session.get('user_id')  # Track who updated
             
             db.session.commit()
             
@@ -392,6 +400,184 @@ def users_list():
     """List all users"""
     users = User.query.order_by(User.last_login_at.desc()).all()
     return render_template('admin/users_list.html', users=users)
+
+
+@admin_bp.route('/users/<int:user_id>/update-role', methods=['POST'])
+@admin_required
+def user_update_role(user_id):
+    """Update user role"""
+    user = User.query.get_or_404(user_id)
+    new_role = request.form.get('role')
+    
+    if new_role not in ['admin', 'editor', 'viewer']:
+        flash('Invalid role', 'error')
+        return redirect(url_for('admin.users_list'))
+    
+    user.role = new_role
+    db.session.commit()
+    
+    flash(f'Role updated: {user.name or user.email} is now {new_role}', 'success')
+    return redirect(url_for('admin.users_list'))
+
+
+@admin_bp.route('/audio')
+@admin_required
+def audio_list():
+    """List all audio episodes"""
+    episodes = AudioEpisode.query.order_by(AudioEpisode.published_at.desc()).all()
+    return render_template('admin/audio_list.html', episodes=episodes)
+
+
+@admin_bp.route('/audio/new', methods=['GET', 'POST'])
+@admin_required
+def audio_new():
+    """Create a new audio episode (MP3 upload)"""
+    if request.method == 'POST':
+        try:
+            title = request.form.get('title', '').strip()
+            slug = request.form.get('slug', '').strip()
+            description = request.form.get('description', '').strip()
+            status = request.form.get('status', 'published')
+            is_featured = request.form.get('is_featured') == 'on'
+
+            if not title or not slug:
+                flash('Title and slug are required', 'error')
+                return redirect(url_for('admin.audio_new'))
+
+            existing = AudioEpisode.query.filter_by(slug=slug).first()
+            if existing:
+                flash('Slug already exists', 'error')
+                return redirect(url_for('admin.audio_new'))
+
+            # MP3 upload (required)
+            if 'mp3_file' not in request.files:
+                flash('MP3 file is required', 'error')
+                return redirect(url_for('admin.audio_new'))
+
+            mp3 = request.files['mp3_file']
+            if not mp3 or not mp3.filename or not allowed_audio_file(mp3.filename):
+                flash('Valid MP3 file is required', 'error')
+                return redirect(url_for('admin.audio_new'))
+
+            mp3_filename = secure_filename(mp3.filename)
+            mp3_filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{mp3_filename}"
+            mp3_filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], mp3_filename)
+            mp3.save(mp3_filepath)
+            mp3_path = f"/{mp3_filepath.replace(chr(92), '/')}"
+
+            # Optional cover image
+            cover_image_path = None
+            if 'cover_image' in request.files:
+                cover = request.files['cover_image']
+                if cover and cover.filename and allowed_file(cover.filename):
+                    cover_filename = secure_filename(cover.filename)
+                    cover_filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{cover_filename}"
+                    cover_filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], cover_filename)
+                    cover.save(cover_filepath)
+                    cover_image_path = f"/{cover_filepath.replace(chr(92), '/')}"
+
+            episode = AudioEpisode(
+                title=title,
+                slug=slug,
+                description=description or None,
+                mp3_path=mp3_path,
+                cover_image_path=cover_image_path,
+                status=status,
+                is_featured=is_featured,
+                published_at=datetime.utcnow(),
+            )
+
+            db.session.add(episode)
+            db.session.commit()
+
+            flash('Audio episode created successfully', 'success')
+            return redirect(url_for('admin.audio_list'))
+
+        except Exception as e:
+            current_app.logger.error(f"Audio create error: {e}")
+            flash('Failed to create audio episode', 'error')
+            return redirect(url_for('admin.audio_new'))
+
+    return render_template('admin/audio_edit.html', episode=None)
+
+
+@admin_bp.route('/audio/<int:episode_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def audio_edit(episode_id):
+    """Edit an existing audio episode"""
+    episode = AudioEpisode.query.get_or_404(episode_id)
+
+    if request.method == 'POST':
+        try:
+            episode.title = request.form.get('title', '').strip()
+            episode.slug = request.form.get('slug', '').strip()
+            episode.description = request.form.get('description', '').strip() or None
+            episode.status = request.form.get('status', 'published')
+            episode.is_featured = request.form.get('is_featured') == 'on'
+
+            if not episode.title or not episode.slug:
+                flash('Title and slug are required', 'error')
+                return redirect(url_for('admin.audio_edit', episode_id=episode_id))
+
+            existing = AudioEpisode.query.filter(AudioEpisode.slug == episode.slug, AudioEpisode.id != episode_id).first()
+            if existing:
+                flash('Slug already exists', 'error')
+                return redirect(url_for('admin.audio_edit', episode_id=episode_id))
+
+            # Optional MP3 replace
+            if 'mp3_file' in request.files:
+                mp3 = request.files['mp3_file']
+                if mp3 and mp3.filename:
+                    if not allowed_audio_file(mp3.filename):
+                        flash('Invalid MP3 file', 'error')
+                        return redirect(url_for('admin.audio_edit', episode_id=episode_id))
+
+                    mp3_filename = secure_filename(mp3.filename)
+                    mp3_filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{mp3_filename}"
+                    mp3_filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], mp3_filename)
+                    mp3.save(mp3_filepath)
+                    episode.mp3_path = f"/{mp3_filepath.replace(chr(92), '/')}"
+
+            # Optional cover replace
+            if 'cover_image' in request.files:
+                cover = request.files['cover_image']
+                if cover and cover.filename:
+                    if not allowed_file(cover.filename):
+                        flash('Invalid cover image type', 'error')
+                        return redirect(url_for('admin.audio_edit', episode_id=episode_id))
+
+                    cover_filename = secure_filename(cover.filename)
+                    cover_filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{cover_filename}"
+                    cover_filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], cover_filename)
+                    cover.save(cover_filepath)
+                    episode.cover_image_path = f"/{cover_filepath.replace(chr(92), '/')}"
+
+            db.session.commit()
+            flash('Audio episode updated successfully', 'success')
+            return redirect(url_for('admin.audio_list'))
+
+        except Exception as e:
+            current_app.logger.error(f"Audio update error: {e}")
+            flash('Failed to update audio episode', 'error')
+            return redirect(url_for('admin.audio_edit', episode_id=episode_id))
+
+    return render_template('admin/audio_edit.html', episode=episode)
+
+
+@admin_bp.route('/audio/<int:episode_id>/delete', methods=['POST'])
+@admin_required
+def audio_delete(episode_id):
+    """Delete an audio episode (record only)"""
+    try:
+        episode = AudioEpisode.query.get_or_404(episode_id)
+        db.session.delete(episode)
+        db.session.commit()
+        flash('Audio episode deleted', 'success')
+    except Exception as e:
+        current_app.logger.error(f"Audio delete error: {e}")
+        flash('Failed to delete audio episode', 'error')
+
+    return redirect(url_for('admin.audio_list'))
 
 
 @admin_bp.route('/readers')
@@ -613,4 +799,330 @@ def upload_image():
     except Exception as e:
         current_app.logger.error(f"Image upload error: {e}")
         return jsonify({'error': 'Upload failed'}), 500
+
+
+# ===========================
+# SERIES MANAGEMENT
+# ===========================
+
+@admin_bp.route('/series')
+@admin_required
+def series_list():
+    """List all series"""
+    series = Series.query.order_by(Series.display_order, Series.created_at.desc()).all()
+    return render_template('admin/series_list.html', series=series)
+
+
+@admin_bp.route('/series/new', methods=['GET', 'POST'])
+@admin_required
+def series_new():
+    """Create new series"""
+    if request.method == 'POST':
+        try:
+            series = Series(
+                slug=request.form.get('slug'),
+                name=request.form.get('name'),
+                description=request.form.get('description'),
+                status=request.form.get('status', 'active'),
+                display_order=int(request.form.get('display_order', 0))
+            )
+            
+            # Handle cover image upload
+            if 'cover_image' in request.files:
+                file = request.files['cover_image']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    series.cover_image_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.add(series)
+            db.session.commit()
+            flash('Series created successfully!', 'success')
+            return redirect(url_for('admin.series_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating series: {str(e)}', 'error')
+    
+    return render_template('admin/series_edit.html', series=None)
+
+
+@admin_bp.route('/series/<int:series_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def series_edit(series_id):
+    """Edit series"""
+    series = Series.query.get_or_404(series_id)
+    
+    if request.method == 'POST':
+        try:
+            series.slug = request.form.get('slug')
+            series.name = request.form.get('name')
+            series.description = request.form.get('description')
+            series.status = request.form.get('status', 'active')
+            series.display_order = int(request.form.get('display_order', 0))
+            
+            # Handle cover image upload
+            if 'cover_image' in request.files:
+                file = request.files['cover_image']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    series.cover_image_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.commit()
+            flash('Series updated successfully!', 'success')
+            return redirect(url_for('admin.series_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating series: {str(e)}', 'error')
+    
+    return render_template('admin/series_edit.html', series=series)
+
+
+@admin_bp.route('/series/<int:series_id>/delete', methods=['POST'])
+@admin_required
+def series_delete(series_id):
+    """Delete series"""
+    try:
+        series = Series.query.get_or_404(series_id)
+        db.session.delete(series)
+        db.session.commit()
+        flash('Series deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting series: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.series_list'))
+
+
+# ===========================
+# VIDEO MANAGEMENT
+# ===========================
+
+@admin_bp.route('/videos')
+@admin_required
+def videos_list():
+    """List all videos"""
+    videos = Video.query.order_by(Video.published_at.desc()).all()
+    return render_template('admin/videos_list.html', videos=videos)
+
+
+@admin_bp.route('/videos/new', methods=['GET', 'POST'])
+@admin_required
+def video_new():
+    """Create new video"""
+    if request.method == 'POST':
+        try:
+            video = Video(
+                slug=request.form.get('slug'),
+                title=request.form.get('title'),
+                description=request.form.get('description'),
+                video_url=request.form.get('video_url'),
+                video_type=request.form.get('video_type', 'youtube'),
+                category=request.form.get('category'),
+                status=request.form.get('status', 'published'),
+                is_featured=bool(request.form.get('is_featured'))
+            )
+            
+            # Handle thumbnail upload
+            if 'thumbnail' in request.files:
+                file = request.files['thumbnail']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    video.thumbnail_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.add(video)
+            db.session.commit()
+            flash('Video created successfully!', 'success')
+            return redirect(url_for('admin.videos_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating video: {str(e)}', 'error')
+    
+    return render_template('admin/video_edit.html', video=None)
+
+
+@admin_bp.route('/videos/<int:video_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def video_edit(video_id):
+    """Edit video"""
+    video = Video.query.get_or_404(video_id)
+    
+    if request.method == 'POST':
+        try:
+            video.slug = request.form.get('slug')
+            video.title = request.form.get('title')
+            video.description = request.form.get('description')
+            video.video_url = request.form.get('video_url')
+            video.video_type = request.form.get('video_type', 'youtube')
+            video.category = request.form.get('category')
+            video.status = request.form.get('status', 'published')
+            video.is_featured = bool(request.form.get('is_featured'))
+            
+            # Handle thumbnail upload
+            if 'thumbnail' in request.files:
+                file = request.files['thumbnail']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    video.thumbnail_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.commit()
+            flash('Video updated successfully!', 'success')
+            return redirect(url_for('admin.videos_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating video: {str(e)}', 'error')
+    
+    return render_template('admin/video_edit.html', video=video)
+
+
+@admin_bp.route('/videos/<int:video_id>/delete', methods=['POST'])
+@admin_required
+def video_delete(video_id):
+    """Delete video"""
+    try:
+        video = Video.query.get_or_404(video_id)
+        db.session.delete(video)
+        db.session.commit()
+        flash('Video deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting video: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.videos_list'))
+
+
+# ===========================
+# PODCAST MANAGEMENT
+# ===========================
+
+@admin_bp.route('/podcasts')
+@admin_required
+def podcasts_list():
+    """List all podcasts"""
+    podcasts = Podcast.query.order_by(Podcast.published_at.desc()).all()
+    return render_template('admin/podcasts_list.html', podcasts=podcasts)
+
+
+@admin_bp.route('/podcasts/new', methods=['GET', 'POST'])
+@admin_required
+def podcast_new():
+    """Create new podcast"""
+    if request.method == 'POST':
+        try:
+            podcast = Podcast(
+                slug=request.form.get('slug'),
+                title=request.form.get('title'),
+                description=request.form.get('description'),
+                guests=request.form.get('guests'),
+                episode_number=int(request.form.get('episode_number', 0)) if request.form.get('episode_number') else None,
+                season_number=int(request.form.get('season_number', 0)) if request.form.get('season_number') else None,
+                status=request.form.get('status', 'published'),
+                is_featured=bool(request.form.get('is_featured'))
+            )
+            
+            # Handle MP3 upload
+            if 'mp3_file' in request.files:
+                file = request.files['mp3_file']
+                if file and file.filename and allowed_audio_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    podcast.mp3_path = f"/{filepath.replace(chr(92), '/')}"
+                else:
+                    flash('Please upload an MP3 file', 'error')
+                    return render_template('admin/podcast_edit.html', podcast=None)
+            
+            # Handle cover image upload
+            if 'cover_image' in request.files:
+                file = request.files['cover_image']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    podcast.cover_image_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.add(podcast)
+            db.session.commit()
+            flash('Podcast created successfully!', 'success')
+            return redirect(url_for('admin.podcasts_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating podcast: {str(e)}', 'error')
+    
+    return render_template('admin/podcast_edit.html', podcast=None)
+
+
+@admin_bp.route('/podcasts/<int:podcast_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def podcast_edit(podcast_id):
+    """Edit podcast"""
+    podcast = Podcast.query.get_or_404(podcast_id)
+    
+    if request.method == 'POST':
+        try:
+            podcast.slug = request.form.get('slug')
+            podcast.title = request.form.get('title')
+            podcast.description = request.form.get('description')
+            podcast.guests = request.form.get('guests')
+            podcast.episode_number = int(request.form.get('episode_number', 0)) if request.form.get('episode_number') else None
+            podcast.season_number = int(request.form.get('season_number', 0)) if request.form.get('season_number') else None
+            podcast.status = request.form.get('status', 'published')
+            podcast.is_featured = bool(request.form.get('is_featured'))
+            
+            # Handle MP3 upload
+            if 'mp3_file' in request.files:
+                file = request.files['mp3_file']
+                if file and file.filename and allowed_audio_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    podcast.mp3_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            # Handle cover image upload
+            if 'cover_image' in request.files:
+                file = request.files['cover_image']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    podcast.cover_image_path = f"/{filepath.replace(chr(92), '/')}"
+            
+            db.session.commit()
+            flash('Podcast updated successfully!', 'success')
+            return redirect(url_for('admin.podcasts_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating podcast: {str(e)}', 'error')
+    
+    return render_template('admin/podcast_edit.html', podcast=podcast)
+
+
+@admin_bp.route('/podcasts/<int:podcast_id>/delete', methods=['POST'])
+@admin_required
+def podcast_delete(podcast_id):
+    """Delete podcast"""
+    try:
+        podcast = Podcast.query.get_or_404(podcast_id)
+        db.session.delete(podcast)
+        db.session.commit()
+        flash('Podcast deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting podcast: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.podcasts_list'))
 

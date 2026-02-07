@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}HORIZON | Magazine{% endblock %}
+{% block description %}Latest news, featured stories, audio, and archives.{% endblock %}
+
+{% block content %}
+<div class="container pt-50 pb-30">
+    <!-- HERO / TOP STORY -->
+    {% set top_story = latest_posts[0] if latest_posts|length > 0 else None %}
+    {% if top_story %}
+    <div class="row mb-40">
+        <div class="col-lg-8 mb-30">
+            <div class="post-card-1 border-radius-10 hover-up">
+                <div class="post-thumb thumb-overlay img-hover-slide position-relative"
+                     style="background-image: url({{ top_story.hero_image_path or url_for('static', filename='imgs/news/thumb-1.jpg') }})">
+                    <a class="img-link" href="{{ url_for('post_detail', slug=top_story.slug) }}"></a>
+                </div>
+                <div class="post-content p-30">
+                    <div class="entry-meta meta-0 font-small mb-10">
+                        <span class="post-cat text-success">{{ top_story.category or 'Article' }}</span>
+                    </div>
+                    <h2 class="post-title mb-20 font-weight-900">
+                        <a href="{{ url_for('post_detail', slug=top_story.slug) }}">{{ top_story.title }}</a>
+                    </h2>
+                    {% if top_story.excerpt %}
+                    <p class="text-muted mb-15" style="font-size: 15px; line-height: 1.7;">
+                        {{ top_story.excerpt }}
+                    </p>
+                    {% endif %}
+                    <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                        <span class="post-on">{{ top_story.published_at.strftime('%B %d, %Y') if top_story.published_at else '' }}</span>
+                        {% if top_story.read_time %}
+                        <span class="time-reading has-dot">{{ top_story.read_time }} mins read</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LATEST NEWS (right rail) -->
+        <div class="col-lg-4">
+            <div class="sidebar-widget widget-latest-posts mb-30">
+                <div class="widget-header-2 position-relative mb-20">
+                    <h5 class="mt-5 mb-10">Latest news</h5>
+                    <div class="bt-1 border-color-1"></div>
+                </div>
+                <div class="post-block-list post-module-1">
+                    <ul class="list-post">
+                        {% for p in latest_posts[1:7] %}
+                        <li class="mb-20">
+                            <div class="d-flex hover-up-2 transition-normal">
+                                <div class="post-thumb post-thumb-80 d-flex mr-15 border-radius-5 img-hover-scale overflow-hidden">
+                                    <a class="color-white" href="{{ url_for('post_detail', slug=p.slug) }}">
+                                        <img src="{{ p.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }}" alt="{{ p.title }}">
+                                    </a>
+                                </div>
+                                <div class="post-content media-body">
+                                    <div class="entry-meta meta-0 font-x-small mb-5">
+                                        <span class="post-cat text-success">{{ p.category or 'Article' }}</span>
+                                    </div>
+                                    <h6 class="post-title mb-10 text-limit-2-row font-medium">
+                                        <a href="{{ url_for('post_detail', slug=p.slug) }}">{{ p.title }}</a>
+                                    </h6>
+                                    <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                                        <span class="post-on">{{ p.published_at.strftime('%b %d') if p.published_at else '' }}</span>
+                                        {% if p.read_time %}
+                                        <span class="post-by has-dot">{{ p.read_time }} mins</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- THE MAGAZINE (issues) -->
+            <div class="sidebar-widget widget_categories mb-30">
+                <div class="widget-header-2 position-relative mb-20">
+                    <h5 class="mt-5 mb-10">The Magazine</h5>
+                    <div class="bt-1 border-color-1"></div>
+                </div>
+                {% if current_issue_key %}
+                <div class="mb-15">
+                    <div class="font-small text-muted mb-5">Current issue</div>
+                    <a href="{{ url_for('archive', month_key=current_issue_key) }}" class="font-weight-900">
+                        {{ current_issue_key|format_month }}
+                    </a>
+                </div>
+                {% endif %}
+                {% if past_issue_keys|length > 0 %}
+                <div class="font-small text-muted mb-10">Past issues</div>
+                <ul class="list-post">
+                    {% for k in past_issue_keys %}
+                    <li class="mb-10">
+                        <a href="{{ url_for('archive', month_key=k) }}">{{ k|format_month }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- FEATURED -->
+    <div class="row mb-40">
+        <div class="col-12">
+            <div class="widget-header-2 position-relative mb-25">
+                <h5 class="mt-5 mb-10">Featured</h5>
+                <div class="bt-1 border-color-1"></div>
+            </div>
+        </div>
+
+        {% if featured_posts|length > 0 %}
+            {% for fp in featured_posts %}
+            <article class="col-lg-4 col-md-6 mb-30">
+                <div class="post-card-1 border-radius-10 hover-up">
+                    <div class="post-thumb thumb-overlay img-hover-slide position-relative"
+                         style="background-image: url({{ fp.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }})">
+                        <a class="img-link" href="{{ url_for('post_detail', slug=fp.slug) }}"></a>
+                        <span class="top-left-icon bg-warning"><i class="elegant-icon icon_star_alt"></i></span>
+                    </div>
+                    <div class="post-content p-30">
+                        <div class="entry-meta meta-0 font-small mb-10">
+                            <span class="post-cat text-warning">{{ fp.category or 'Featured' }}</span>
+                        </div>
+                        <h6 class="post-title mb-15 font-weight-900">
+                            <a href="{{ url_for('post_detail', slug=fp.slug) }}">{{ fp.title }}</a>
+                        </h6>
+                        <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                            <span class="post-on">{{ fp.published_at.strftime('%B %d, %Y') if fp.published_at else '' }}</span>
+                            {% if fp.read_time %}
+                            <span class="time-reading has-dot">{{ fp.read_time }} mins read</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <p class="text-muted">No featured stories yet. Mark posts as featured in Admin.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- AUDIO + ARCHIVES -->
+    <div class="row">
+        <div class="col-lg-6 mb-30">
+            <div class="widget-header-2 position-relative mb-25">
+                <h5 class="mt-5 mb-10">Harvard Magazine in Audio</h5>
+                <div class="bt-1 border-color-1"></div>
+            </div>
+
+            {% if audio_episodes|length > 0 %}
+                <ul class="list-post">
+                    {% for ep in audio_episodes %}
+                    <li class="mb-20">
+                        <div class="post-content">
+                            <h6 class="post-title mb-10 font-weight-900">{{ ep.title }}</h6>
+                            <audio controls preload="none" style="width: 100%;">
+                                <source src="{{ ep.mp3_path }}" type="audio/mpeg">
+                            </audio>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No audio episodes yet. (Next step: add MP3 upload in Admin.)</p>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-6 mb-30">
+            <div class="widget-header-2 position-relative mb-25">
+                <h5 class="mt-5 mb-10">From our archives</h5>
+                <div class="bt-1 border-color-1"></div>
+            </div>
+
+            {% if archive_posts|length > 0 %}
+                <ul class="list-post">
+                    {% for ap in archive_posts %}
+                    <li class="mb-20">
+                        <div class="d-flex hover-up-2 transition-normal">
+                            <div class="post-thumb post-thumb-80 d-flex mr-15 border-radius-5 img-hover-scale overflow-hidden">
+                                <a class="color-white" href="{{ url_for('post_detail', slug=ap.slug) }}">
+                                    <img src="{{ ap.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }}" alt="{{ ap.title }}">
+                                </a>
+                            </div>
+                            <div class="post-content media-body">
+                                <div class="entry-meta meta-0 font-x-small mb-5">
+                                    <span class="post-cat text-success">{{ ap.category or 'Archive' }}</span>
+                                </div>
+                                <h6 class="post-title mb-10 text-limit-2-row font-medium">
+                                    <a href="{{ url_for('post_detail', slug=ap.slug) }}">{{ ap.title }}</a>
+                                </h6>
+                                <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
+                                    <span class="post-on">{{ ap.published_at.strftime('%b %d, %Y') if ap.published_at else '' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No archive stories yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

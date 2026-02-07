@@ -74,3 +74,4 @@ def migrate_read_events_anonymous():
 if __name__ == '__main__':
     migrate_read_events_anonymous()
 
+

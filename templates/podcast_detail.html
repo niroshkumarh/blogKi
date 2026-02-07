@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ podcast.title }} - Podcast - HORIZON{% endblock %}
+
+{% block content %}
+<div class="container pt-50 pb-50">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <article class="podcast-detail">
+                {% if podcast.season_number and podcast.episode_number %}
+                <div class="podcast-episode-label mb-10">
+                    Season {{ podcast.season_number }}, Episode {{ podcast.episode_number }}
+                </div>
+                {% elif podcast.episode_number %}
+                <div class="podcast-episode-label mb-10">
+                    Episode {{ podcast.episode_number }}
+                </div>
+                {% endif %}
+                
+                <h1 class="podcast-title mb-20">{{ podcast.title }}</h1>
+                
+                {% if podcast.guests %}
+                <div class="podcast-guests-detail mb-20">
+                    <strong>Guests:</strong> {{ podcast.guests }}
+                </div>
+                {% endif %}
+
+                <div class="podcast-meta mb-30">
+                    <span>{{ podcast.published_at.strftime('%B %d, %Y') if podcast.published_at else '' }}</span>
+                </div>
+
+                <!-- Cover Image -->
+                {% if podcast.cover_image_path %}
+                <div class="podcast-cover mb-30">
+                    <img src="{{ podcast.cover_image_path }}" alt="{{ podcast.title }}" class="img-fluid" style="max-width: 400px;">
+                </div>
+                {% endif %}
+
+                <!-- Audio Player -->
+                <div class="podcast-player mb-30">
+                    <audio controls preload="metadata" class="w-100" style="max-width: 600px;">
+                        <source src="{{ podcast.mp3_path }}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+
+                <!-- Description -->
+                {% if podcast.description %}
+                <div class="podcast-description">
+                    <h3>About this episode</h3>
+                    <p>{{ podcast.description }}</p>
+                </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            {% if recent_episodes|length > 0 %}
+            <div class="sidebar-widget">
+                <h4 class="widget-title">Recent Episodes</h4>
+                <div class="recent-episodes-list">
+                    {% for episode in recent_episodes %}
+                    <article class="recent-episode-item mb-20 pb-20" style="border-bottom: 1px solid #eee;">
+                        <h6 class="recent-episode-title mb-10">
+                            <a href="{{ url_for('podcast_detail', slug=episode.slug) }}">{{ episode.title }}</a>
+                        </h6>
+                        {% if episode.guests %}
+                        <div class="recent-episode-guests mb-5"><small>with {{ episode.guests }}</small></div>
+                        {% endif %}
+                        <div class="recent-episode-meta">
+                            <small>{{ episode.published_at.strftime('%b %d, %Y') if episode.published_at else '' }}</small>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                <a href="{{ url_for('podcasts_list') }}" class="btn btn-sm btn-outline-primary mt-10">View All Episodes</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

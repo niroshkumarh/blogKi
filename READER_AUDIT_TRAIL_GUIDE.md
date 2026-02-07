@@ -372,3 +372,4 @@ Potential improvements for future versions:
 **Database Impact**: Adds 3 columns + 3 indexes to `read_events` table  
 **Performance**: Minimal (event tracking is async, no page load impact)
 
+

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ video.title }} - Videos - HORIZON{% endblock %}
+
+{% block content %}
+<div class="container pt-50 pb-50">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <article class="video-detail">
+                {% if video.category %}
+                <div class="video-category mb-10">{{ video.category }}</div>
+                {% endif %}
+                <h1 class="video-title mb-20">{{ video.title }}</h1>
+                
+                <div class="video-meta mb-30">
+                    <span>{{ video.published_at.strftime('%B %d, %Y') if video.published_at else '' }}</span>
+                </div>
+
+                <!-- Video Player -->
+                <div class="video-player mb-30">
+                    {% if video.video_type == 'youtube' %}
+                        {% set youtube_id = video.video_url.split('v=')[-1].split('&')[0] if 'v=' in video.video_url else video.video_url.split('/')[-1] %}
+                        <div class="embed-responsive embed-responsive-16by9">
+                            <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/{{ youtube_id }}" allowfullscreen></iframe>
+                        </div>
+                    {% elif video.video_type == 'vimeo' %}
+                        {% set vimeo_id = video.video_url.split('/')[-1] %}
+                        <div class="embed-responsive embed-responsive-16by9">
+                            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/{{ vimeo_id }}" allowfullscreen></iframe>
+                        </div>
+                    {% else %}
+                        <video controls class="w-100">
+                            <source src="{{ video.video_url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                {% if video.description %}
+                <div class="video-description">
+                    <h3>About this video</h3>
+                    <p>{{ video.description }}</p>
+                </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            {% if related_videos|length > 0 %}
+            <div class="sidebar-widget">
+                <h4 class="widget-title">Related Videos</h4>
+                <div class="related-videos-list">
+                    {% for rel_video in related_videos %}
+                    <article class="related-video-item mb-20">
+                        <div class="row">
+                            <div class="col-5">
+                                <a href="{{ url_for('video_detail', slug=rel_video.slug) }}">
+                                    {% if rel_video.thumbnail_path %}
+                                    <img src="{{ rel_video.thumbnail_path }}" alt="{{ rel_video.title }}" class="img-fluid">
+                                    {% else %}
+                                    <div class="video-placeholder-sm">
+                                        <i class="fas fa-play-circle"></i>
+                                    </div>
+                                    {% endif %}
+                                </a>
+                            </div>
+                            <div class="col-7">
+                                <h6 class="related-video-title">
+                                    <a href="{{ url_for('video_detail', slug=rel_video.slug) }}">{{ rel_video.title }}</a>
+                                </h6>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

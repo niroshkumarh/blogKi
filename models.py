@@ -20,6 +20,7 @@ class User(db.Model):
     entra_oid = db.Column(db.String(255), unique=True, nullable=False, index=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     name = db.Column(db.String(255))
+    role = db.Column(db.String(20), default='viewer', index=True)  # admin, editor, viewer
     last_login_at = db.Column(db.DateTime, default=utcnow)
     created_at = db.Column(db.DateTime, default=utcnow)
     
@@ -34,7 +35,11 @@ class User(db.Model):
     
     def is_admin(self, admin_emails):
         """Check if user is admin"""
-        return self.email in admin_emails
+        return self.email in admin_emails or self.role == 'admin'
+    
+    def can_edit(self):
+        """Check if user can edit content"""
+        return self.role in ['admin', 'editor']
 
 
 class Post(db.Model):
@@ -57,10 +62,16 @@ class Post(db.Model):
     read_time = db.Column(db.Integer)  # estimated read time in minutes
     # related_posts_json = db.Column(db.Text)  # JSON array of related post slugs - TEMPORARILY DISABLED
     
+    # Audit tracking
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
     # Relationships
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     read_events = db.relationship('ReadEvent', backref='post', lazy='dynamic', cascade='all, delete-orphan')
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
     
     def __repr__(self):
         return f'<Post {self.title}>'
@@ -201,4 +212,110 @@ class ReadEvent(db.Model):
     
     def __repr__(self):
         return f'<ReadEvent {self.id} Post {self.post_id}>'
+
+
+class AudioEpisode(db.Model):
+    """AudioEpisode model - uploaded MP3 episodes (Harvard Magazine in Audio)"""
+    __tablename__ = 'audio_episodes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(500), nullable=False)
+    description = db.Column(db.Text)
+    mp3_path = db.Column(db.String(500), nullable=False)  # web path (e.g. /uploads/xyz.mp3)
+    cover_image_path = db.Column(db.String(500))
+    duration_seconds = db.Column(db.Integer)
+    published_at = db.Column(db.DateTime, default=utcnow, index=True)
+    status = db.Column(db.String(20), default='published', index=True)  # draft, published
+    is_featured = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    
+    # Audit tracking
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f'<AudioEpisode {self.title}>'
+
+
+class Series(db.Model):
+    """Series model - content series like 'Five Questions', 'Harvard in the Headlines', etc."""
+    __tablename__ = 'series'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    cover_image_path = db.Column(db.String(500))
+    status = db.Column(db.String(20), default='active', index=True)  # active, inactive
+    display_order = db.Column(db.Integer, default=0)  # for sorting in menu
+    created_at = db.Column(db.DateTime, default=utcnow)
+    
+    # Audit tracking
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f'<Series {self.name}>'
+
+
+class Video(db.Model):
+    """Video model - video content (YouTube embeds, uploaded videos, etc.)"""
+    __tablename__ = 'videos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(500), nullable=False)
+    description = db.Column(db.Text)
+    video_url = db.Column(db.String(500), nullable=False)  # YouTube URL or video file path
+    video_type = db.Column(db.String(20), default='youtube')  # youtube, vimeo, upload
+    thumbnail_path = db.Column(db.String(500))
+    duration_seconds = db.Column(db.Integer)
+    published_at = db.Column(db.DateTime, default=utcnow, index=True)
+    status = db.Column(db.String(20), default='published', index=True)  # draft, published
+    is_featured = db.Column(db.Boolean, default=False, index=True)
+    category = db.Column(db.String(100))  # e.g., "Interview", "Documentary", "News"
+    created_at = db.Column(db.DateTime, default=utcnow)
+    
+    # Audit tracking
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f'<Video {self.title}>'
+
+
+class Podcast(db.Model):
+    """Podcast model - podcast episodes with MP3 and metadata"""
+    __tablename__ = 'podcasts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(500), nullable=False)
+    description = db.Column(db.Text)
+    mp3_path = db.Column(db.String(500), nullable=False)  # web path to MP3
+    cover_image_path = db.Column(db.String(500))
+    duration_seconds = db.Column(db.Integer)
+    episode_number = db.Column(db.Integer)
+    season_number = db.Column(db.Integer)
+    published_at = db.Column(db.DateTime, default=utcnow, index=True)
+    status = db.Column(db.String(20), default='published', index=True)  # draft, published
+    is_featured = db.Column(db.Boolean, default=False, index=True)
+    guests = db.Column(db.Text)  # comma-separated guest names
+    created_at = db.Column(db.DateTime, default=utcnow)
+    
+    # Audit tracking
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f'<Podcast {self.title}>'
 

@@ -1,0 +1,85 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if series else 'New' }} Series - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit' if series else 'New' }} Series</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin.series_list') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="name">Series Name *</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ series.name if series else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="slug">Slug * <small class="text-muted">(URL-friendly, e.g., "five-questions")</small></label>
+        <input type="text" class="form-control" id="slug" name="slug" value="{{ series.slug if series else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ series.description if series else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="cover_image">Cover Image</label>
+        {% if series and series.cover_image_path %}
+        <div class="mb-2">
+            <img src="{{ series.cover_image_path }}" alt="Current cover" style="max-width: 200px; max-height: 150px;">
+        </div>
+        {% endif %}
+        <input type="file" class="form-control-file" id="cover_image" name="cover_image" accept="image/*">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="status">Status</label>
+            <select class="form-control" id="status" name="status">
+                <option value="active" {% if series and series.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if series and series.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div class="form-group col-md-6">
+            <label for="display_order">Display Order <small class="text-muted">(lower = appears first)</small></label>
+            <input type="number" class="form-control" id="display_order" name="display_order" value="{{ series.display_order if series else 0 }}">
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ 'Update' if series else 'Create' }} Series
+    </button>
+</form>
+
+<script>
+// Auto-generate slug from name
+document.getElementById('name').addEventListener('blur', function() {
+    const slug = document.getElementById('slug');
+    if (!slug.value) {
+        slug.value = this.value.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+});
+</script>
+{% endblock %}

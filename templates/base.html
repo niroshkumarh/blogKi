@@ -28,6 +28,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
     
+    <!-- Harvard Magazine Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-layout.css') }}">
+    
     <!-- HORIZON Branding Styles -->
     <style>
         /* Apply Anek Bold to all HORIZON branding */
@@ -77,54 +81,86 @@
         </div>
     </aside>
     
-    <!-- Header -->
-    <header class="main-header header-style-1 font-heading">
-        <div class="header-top">
+    <!-- Header - Harvard Magazine Style -->
+    <header class="harvard-header">
+        <!-- Top bar with social and account -->
+        <div class="harvard-header-top">
             <div class="container">
-                <div class="row pt-20 pb-20">
-                    <div class="col-md-3 col-xs-6">
-                        <a href="{{ url_for('index') }}"><img class="logo" src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON"></a>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <div class="harvard-social-icons">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-x-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     </div>
-                    <div class="col-md-9 col-xs-6 text-right header-top-right">
+                    <div class="harvard-account-menu">
                         {% if session.user_name %}
-                        <span class="vertical-divider mr-20 ml-20 d-none d-md-inline"></span>
-                        <span class="mr-15 text-muted font-small d-none d-md-inline">Welcome, {{ session.user_name }}</span>
+                        <span class="mr-15">{{ session.user_name }}</span>
                         {% if session.is_admin %}
-                        <a href="{{ url_for('admin.dashboard') }}" class="mr-15 text-muted font-small"><i class="elegant-icon icon_cog mr-5"></i>Admin</a>
+                        <a href="{{ url_for('admin.dashboard') }}" class="mr-15">Admin</a>
                         {% endif %}
-                        <a href="{{ url_for('auth.logout') }}" class="btn btn-radius bg-primary text-white ml-15 font-small box-shadow">Logout</a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-dark">Logout</a>
+                        {% else %}
+                        <a href="{{ url_for('auth.login', next=request.path) }}" class="mr-10">Log in</a>
+                        <a href="#" class="btn btn-sm btn-primary">Donate</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-        <div class="header-sticky">
-            <div class="container align-self-center position-relative">
-                <div class="mobile_menu d-lg-none d-block"></div>
-                <div class="main-nav d-none d-lg-block float-left">
-                    <nav>
-                        <ul class="main-menu d-none d-lg-inline font-small">
-                            <li><a href="{{ url_for('index') }}"><i class="elegant-icon icon_house_alt mr-5"></i> Home</a></li>
-                            {% for month in months[:5] %}
-                            <li><a href="{{ url_for('archive', month_key=month) }}">{{ month|format_month }}</a></li>
-                            {% endfor %}
-                        </ul>
-                        <ul id="mobile-menu" class="d-block d-lg-none text-muted">
-                            <li><a href="{{ url_for('index') }}">Home</a></li>
-                            {% for month in months[:5] %}
-                            <li><a href="{{ url_for('archive', month_key=month) }}">{{ month|format_month }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </nav>
-                </div>
-                <div class="float-right header-tools text-muted font-small">
-                    <div class="off-canvas-toggle-cover d-inline-block">
-                        <div class="off-canvas-toggle hidden d-inline-block" id="off-canvas-toggle">
-                            <span></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="clearfix"></div>
+
+        <!-- Logo + Tagline -->
+        <div class="harvard-header-branding text-center py-4">
+            <div class="container">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON" class="harvard-logo mb-2">
+                </a>
+                <div class="harvard-tagline">Your <em>independent</em> source for news since 1898</div>
+            </div>
+        </div>
+
+        <!-- Main Navigation -->
+        <div class="harvard-header-nav">
+            <div class="container">
+                <nav class="harvard-main-nav">
+                    <ul class="nav justify-content-center flex-wrap">
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">The Magazine</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">Current Issue</a>
+                                <a class="dropdown-item" href="{{ url_for('archive', month_key=months[1]) if months|length > 1 else '#' }}">Past Issues</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Topics</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">Arts &amp; Culture</a>
+                                <a class="dropdown-item" href="#">Commentary</a>
+                                <a class="dropdown-item" href="#">Faculty</a>
+                                <a class="dropdown-item" href="#">Health &amp; Medicine</a>
+                                <a class="dropdown-item" href="#">Science</a>
+                                <a class="dropdown-item" href="#">Technology</a>
+                                <a class="dropdown-item" href="#">University News</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Series</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">Five Questions</a>
+                                <a class="dropdown-item" href="#">In the Headlines</a>
+                                <a class="dropdown-item" href="#">Featured Series</a>
+                            </div>
+                        </li>
+                        <li class="nav-item"><a href="#" class="nav-link">Podcast</a></li>
+                        <li class="nav-item"><a href="#" class="nav-link">Videos</a></li>
+                        {% if months|length >= 1 %}
+                        <li class="nav-item"><a href="{{ url_for('archive', month_key=months[0]) }}" class="nav-link">{{ months[0]|format_month }}</a></li>
+                        {% endif %}
+                        {% if months|length >= 2 %}
+                        <li class="nav-item"><a href="{{ url_for('archive', month_key=months[1]) }}" class="nav-link">{{ months[1]|format_month }}</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
             </div>
         </div>
     </header>

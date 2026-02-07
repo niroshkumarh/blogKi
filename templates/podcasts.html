@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Podcast - HORIZON{% endblock %}
+
+{% block content %}
+<div class="container pt-50 pb-50">
+    <!-- Page Header -->
+    <div class="row mb-40">
+        <div class="col-12">
+            <h1 class="page-title">Podcast</h1>
+            <p class="page-subtitle">Listen to our latest episodes</p>
+        </div>
+    </div>
+
+    <!-- Featured Podcasts -->
+    {% if featured_podcasts|length > 0 %}
+    <div class="row mb-40">
+        <div class="col-12">
+            <h2 class="section-heading mb-30">Featured Episodes</h2>
+        </div>
+        {% for podcast in featured_podcasts %}
+        <div class="col-lg-4 col-md-6 mb-30">
+            <article class="podcast-card-featured">
+                {% if podcast.cover_image_path %}
+                <div class="podcast-card-thumb mb-15">
+                    <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">
+                        <img src="{{ podcast.cover_image_path }}" alt="{{ podcast.title }}" class="img-fluid">
+                    </a>
+                </div>
+                {% endif %}
+                <h4 class="podcast-card-title mb-10">
+                    <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">{{ podcast.title }}</a>
+                </h4>
+                {% if podcast.guests %}
+                <div class="podcast-card-guests mb-10"><small>with {{ podcast.guests }}</small></div>
+                {% endif %}
+                {% if podcast.description %}
+                <p class="podcast-card-desc">{{ podcast.description[:100] }}{% if podcast.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-play"></i> Listen Now
+                </a>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- All Episodes -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="section-heading mb-30">All Episodes</h2>
+        </div>
+        {% for podcast in podcasts %}
+        <div class="col-lg-6 mb-30">
+            <article class="podcast-episode-item">
+                <div class="row">
+                    <div class="col-md-4">
+                        {% if podcast.cover_image_path %}
+                        <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">
+                            <img src="{{ podcast.cover_image_path }}" alt="{{ podcast.title }}" class="img-fluid">
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        {% if podcast.season_number and podcast.episode_number %}
+                        <div class="podcast-episode-number mb-5">
+                            <small>Season {{ podcast.season_number }}, Episode {{ podcast.episode_number }}</small>
+                        </div>
+                        {% elif podcast.episode_number %}
+                        <div class="podcast-episode-number mb-5">
+                            <small>Episode {{ podcast.episode_number }}</small>
+                        </div>
+                        {% endif %}
+                        <h5 class="podcast-episode-title mb-10">
+                            <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">{{ podcast.title }}</a>
+                        </h5>
+                        {% if podcast.guests %}
+                        <div class="podcast-guests mb-10"><small>with {{ podcast.guests }}</small></div>
+                        {% endif %}
+                        <div class="podcast-meta mb-10">
+                            <small>{{ podcast.published_at.strftime('%B %d, %Y') if podcast.published_at else '' }}</small>
+                        </div>
+                        <audio controls preload="none" class="w-100">
+                            <source src="{{ podcast.mp3_path }}" type="audio/mpeg">
+                        </audio>
+                    </div>
+                </div>
+            </article>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <p class="text-center text-muted">No podcast episodes available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

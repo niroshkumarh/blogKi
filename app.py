@@ -34,6 +34,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['ALLOWED_AUDIO_EXTENSIONS'] = {'mp3'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Session configuration for OAuth - use Flask's built-in signed cookie sessions
@@ -63,7 +64,7 @@ db.init_app(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Import models after db init
-from models import User, Post, Comment, Like, ReadEvent
+from models import User, Post, Comment, Like, ReadEvent, AudioEpisode, Series, Video, Podcast
 
 # Register blueprints
 from auth import auth_bp, login_required
@@ -77,21 +78,79 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 
 # Routes
 @app.route('/')
-@login_required
 def index():
-    """Redirect to latest month archive (category-grid equivalent)"""
-    # Find the latest published post to determine the current month
-    latest_post = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).first()
+    """Homepage (Harvard Magazine-style modules)"""
+    # Core collections
+    latest_posts = (
+        Post.query.filter_by(status='published')
+        .order_by(Post.published_at.desc())
+        .limit(12)
+        .all()
+    )
+    featured_posts = (
+        Post.query.filter_by(status='published', is_featured=True)
+        .order_by(Post.published_at.desc())
+        .limit(6)
+        .all()
+    )
+
+    # “From our archives” = older posts (simple rule-based default)
+    archive_posts = (
+        Post.query.filter_by(status='published')
+        .order_by(Post.published_at.asc())
+        .limit(6)
+        .all()
+    )
+
+    # Issue-like keys (we currently use month_key as the issue key)
+    issue_keys = (
+        db.session.query(Post.month_key)
+        .filter_by(status='published')
+        .distinct()
+        .order_by(Post.month_key.desc())
+        .all()
+    )
+    issue_keys = [m[0] for m in issue_keys]
+    if not issue_keys:
+        issue_keys = _default_month_keys()
+    current_issue_key = issue_keys[0] if issue_keys else None
+    past_issue_keys = issue_keys[1:7] if len(issue_keys) > 1 else []
+
+    # Audio episodes
+    audio_episodes = (
+        AudioEpisode.query.filter_by(status='published')
+        .order_by(AudioEpisode.published_at.desc())
+        .limit(5)
+        .all()
+    )
     
-    if latest_post:
-        # Redirect to the month archive (this is the dynamic category-grid.html)
-        return redirect(url_for('archive', month_key=latest_post.month_key))
+    # Featured Videos
+    featured_videos = (
+        Video.query.filter_by(status='published', is_featured=True)
+        .order_by(Video.published_at.desc())
+        .limit(4)
+        .all()
+    )
     
-    # If no posts exist, show empty archive
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
-    return render_template('archive.html', posts=[], month_key=None, months=months)
+    # Recent Podcasts
+    recent_podcasts = (
+        Podcast.query.filter_by(status='published')
+        .order_by(Podcast.published_at.desc())
+        .limit(4)
+        .all()
+    )
+
+    return render_template(
+        'home_harvard.html',
+        latest_posts=latest_posts,
+        featured_posts=featured_posts,
+        archive_posts=archive_posts,
+        current_issue_key=current_issue_key,
+        past_issue_keys=past_issue_keys,
+        audio_episodes=audio_episodes,
+        featured_videos=featured_videos,
+        recent_podcasts=recent_podcasts,
+    )
 
 
 @app.route('/test')
@@ -117,7 +176,6 @@ def uploaded_file(filename):
 
 
 @app.route('/archive/<month_key>')
-@login_required
 def archive(month_key):
     """Show posts for a specific month"""
     posts = Post.query.filter_by(month_key=month_key, status='published').order_by(Post.published_at.desc()).all()
@@ -125,15 +183,10 @@ def archive(month_key):
     # Get only posts marked as featured
     featured_posts = Post.query.filter_by(month_key=month_key, status='published', is_featured=True).order_by(Post.published_at.desc()).limit(5).all()
     
-    # Get all available months
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
-    return render_template('archive.html', posts=posts, featured_posts=featured_posts, month_key=month_key, months=months)
+    return render_template('archive.html', posts=posts, featured_posts=featured_posts, month_key=month_key)
 
 
 @app.route('/post/<slug>')
-@login_required
 def post_detail(slug):
     """Show full post with comments and likes"""
     post = Post.query.filter_by(slug=slug, status='published').first_or_404()
@@ -149,12 +202,8 @@ def post_detail(slug):
     if 'user_id' in session:
         user_liked = Like.query.filter_by(post_id=post.id, user_id=session['user_id']).first() is not None
     
-    # Get all available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
     return render_template('post.html', post=post, comments=comments, like_count=like_count, 
-                          user_liked=user_liked, months=months)
+                          user_liked=user_liked)
 
 
 @app.template_filter('format_month')
@@ -172,27 +221,106 @@ def format_month_filter(month_key):
         return month_key
 
 
+def _default_month_keys(count=7):
+    """Return list of month keys (YYYY-MM) for current and past months. Used when DB has no posts (e.g. local)."""
+    from datetime import date
+    today = date.today()
+    year, month = today.year, today.month
+    keys = []
+    for i in range(count):
+        m = month - i
+        y = year
+        while m <= 0:
+            m += 12
+            y -= 1
+        keys.append(f'{y}-{m:02d}')
+    return keys
+
+
 @app.context_processor
 def inject_now():
     """Make current year available in all templates"""
     from datetime import timezone
-    return {'now': datetime.now(timezone.utc)}
+    # Global navigation data (months/issues) – from DB or fallback so archive URLs work locally
+    months = (
+        db.session.query(Post.month_key)
+        .filter_by(status='published')
+        .distinct()
+        .order_by(Post.month_key.desc())
+        .all()
+    )
+    months = [m[0] for m in months]
+    if not months:
+        months = _default_month_keys()
+
+    # Series for navigation dropdown
+    active_series = Series.query.filter_by(status='active').order_by(Series.display_order).all()
+
+    return {
+        'now': datetime.now(timezone.utc),
+        'months': months,
+        'nav_series': active_series
+    }
+
+
+@app.route('/series/<slug>')
+def series_detail(slug):
+    """Display articles in a specific series"""
+    series = Series.query.filter_by(slug=slug, status='active').first_or_404()
+    # For now, we don't have series_id on posts yet, so show a placeholder
+    # In future, add series_id column to posts table
+    return render_template('series.html', series=series, posts=[])
+
+
+@app.route('/videos')
+def videos_list():
+    """List all published videos"""
+    videos = Video.query.filter_by(status='published').order_by(Video.published_at.desc()).all()
+    featured_videos = Video.query.filter_by(status='published', is_featured=True).order_by(Video.published_at.desc()).limit(3).all()
+    return render_template('videos.html', videos=videos, featured_videos=featured_videos)
+
+
+@app.route('/video/<slug>')
+def video_detail(slug):
+    """Display single video"""
+    video = Video.query.filter_by(slug=slug, status='published').first_or_404()
+    # Get related videos (same category)
+    related_videos = Video.query.filter(
+        Video.category == video.category,
+        Video.id != video.id,
+        Video.status == 'published'
+    ).order_by(Video.published_at.desc()).limit(4).all()
+    return render_template('video_detail.html', video=video, related_videos=related_videos)
+
+
+@app.route('/podcasts')
+def podcasts_list():
+    """List all published podcasts"""
+    podcasts = Podcast.query.filter_by(status='published').order_by(Podcast.published_at.desc()).all()
+    featured_podcasts = Podcast.query.filter_by(status='published', is_featured=True).order_by(Podcast.published_at.desc()).limit(3).all()
+    return render_template('podcasts.html', podcasts=podcasts, featured_podcasts=featured_podcasts)
+
+
+@app.route('/podcast/<slug>')
+def podcast_detail(slug):
+    """Display single podcast episode"""
+    podcast = Podcast.query.filter_by(slug=slug, status='published').first_or_404()
+    # Get recent episodes
+    recent_episodes = Podcast.query.filter(
+        Podcast.id != podcast.id,
+        Podcast.status == 'published'
+    ).order_by(Podcast.published_at.desc()).limit(5).all()
+    return render_template('podcast_detail.html', podcast=podcast, recent_episodes=recent_episodes)
 
 
 @app.errorhandler(404)
 def not_found(e):
-    # Get available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    return render_template('404.html', months=months), 404
+    return render_template('404.html'), 404
 
 
 @app.errorhandler(500)
 def server_error(e):
-    # Get available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    return render_template('500.html', months=months), 500
+    return render_template('500.html'), 500
 
 
 if __name__ == '__main__':

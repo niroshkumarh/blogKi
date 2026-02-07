@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}HORIZON | Magazine{% endblock %}
+{% block description %}Your source for news since 1984{% endblock %}
+
+{% block content %}
+<div class="container-fluid harvard-home">
+    <div class="container pt-30 pb-30">
+        
+        <!-- 3-COLUMN LAYOUT (Harvard style) -->
+        <div class="row">
+            <!-- LEFT: LATEST NEWS -->
+            <div class="col-lg-3 col-md-12 mb-30">
+                <div class="latest-news-section">
+                    <h5 class="section-heading">LATEST NEWS</h5>
+                    <div class="latest-news-list">
+                        {% for post in latest_posts[:6] %}
+                        <article class="latest-news-item mb-25">
+                            {% if post.hero_image_path %}
+                            <div class="latest-news-thumb mb-10">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">
+                                    <img src="{{ post.hero_image_path }}" alt="{{ post.title }}">
+                                </a>
+                            </div>
+                            {% endif %}
+                            <h6 class="latest-news-title mb-5">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                            </h6>
+                            {% if post.excerpt %}
+                            <p class="latest-news-excerpt">{{ post.excerpt[:80] }}{% if post.excerpt|length > 80 %}...{% endif %}</p>
+                            {% endif %}
+                            <div class="latest-news-meta">
+                                <span class="post-cat">{{ post.category or 'ARTICLE' }}</span>
+                            </div>
+                        </article>
+                        {% endfor %}
+                        
+                        <a href="{{ url_for('archive', month_key=current_issue_key) if current_issue_key else '#' }}" class="read-more-link">
+                            Read More Articles <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER: FEATURED MAIN -->
+            <div class="col-lg-6 col-md-12 mb-30">
+                {% if featured_posts|length > 0 %}
+                {% set main_featured = featured_posts[0] %}
+                <div class="main-featured-section">
+                    <h5 class="section-heading">UNIVERSITY NEWS</h5>
+                    
+                    <!-- Main featured article -->
+                    <article class="main-featured-article">
+                        {% if main_featured.hero_image_path %}
+                        <div class="main-featured-thumb mb-15">
+                            <a href="{{ url_for('post_detail', slug=main_featured.slug) }}">
+                                <img src="{{ main_featured.hero_image_path }}" alt="{{ main_featured.title }}" class="img-fluid">
+                            </a>
+                        </div>
+                        {% endif %}
+                        <h2 class="main-featured-title mb-15">
+                            <a href="{{ url_for('post_detail', slug=main_featured.slug) }}">{{ main_featured.title }}</a>
+                        </h2>
+                        {% if main_featured.excerpt %}
+                        <p class="main-featured-excerpt">{{ main_featured.excerpt }}</p>
+                        {% endif %}
+                    </article>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- RIGHT: FEATURED SIDEBAR -->
+            <div class="col-lg-3 col-md-12 mb-30">
+                <div class="featured-sidebar">
+                    <h5 class="section-heading">FEATURED</h5>
+                    <div class="featured-sidebar-list">
+                        {% for post in featured_posts[1:4] %}
+                        <article class="featured-sidebar-item mb-20">
+                            {% if post.hero_image_path %}
+                            <div class="featured-sidebar-thumb mb-10">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">
+                                    <img src="{{ post.hero_image_path }}" alt="{{ post.title }}">
+                                </a>
+                            </div>
+                            {% endif %}
+                            <h6 class="featured-sidebar-title">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                            </h6>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPLORE MORE FROM CURRENT ISSUE -->
+        {% if latest_posts|length >= 3 %}
+        <div class="explore-more-section mt-40 mb-40">
+            <h5 class="section-heading text-center mb-30">EXPLORE MORE FROM CURRENT ISSUE</h5>
+            <div class="row">
+                {% for post in latest_posts[6:9] %}
+                <div class="col-lg-4 col-md-6 mb-30">
+                    <article class="explore-card">
+                        {% if post.hero_image_path %}
+                        <div class="explore-card-thumb mb-15">
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}">
+                                <img src="{{ post.hero_image_path }}" alt="{{ post.title }}" class="img-fluid">
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="explore-card-category mb-5">{{ post.category or 'ARTICLE' }}</div>
+                        <h4 class="explore-card-title">
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                        </h4>
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- THE MAGAZINE + AUDIO (side by side) -->
+        <div class="row mt-40">
+            <!-- THE MAGAZINE -->
+            <div class="col-lg-6 col-md-12 mb-40">
+                <div class="magazine-section">
+                    <div class="d-flex justify-content-between align-items-center mb-20">
+                        <h5 class="section-heading mb-0">THE MAGAZINE</h5>
+                        <a href="{{ url_for('archive', month_key=past_issue_keys[0]) if past_issue_keys else '#' }}" class="read-past-link">Read Past Issues »</a>
+                    </div>
+                    
+                    <div class="magazine-covers">
+                        {% if current_issue_key %}
+                        <div class="magazine-cover-item">
+                            <a href="{{ url_for('archive', month_key=current_issue_key) }}">
+                                <div class="magazine-cover-placeholder">
+                                    <div class="cover-text">{{ current_issue_key|format_month }}</div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% for issue_key in past_issue_keys[:5] %}
+                        <div class="magazine-cover-item">
+                            <a href="{{ url_for('archive', month_key=issue_key) }}">
+                                <div class="magazine-cover-placeholder">
+                                    <div class="cover-text">{{ issue_key|format_month }}</div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- HARVARD MAGAZINE IN AUDIO -->
+            <div class="col-lg-6 col-md-12 mb-40">
+                <div class="audio-section">
+                    <h5 class="section-heading mb-20">HARVARD MAGAZINE IN AUDIO</h5>
+                    {% if audio_episodes|length > 0 %}
+                    <div class="audio-list">
+                        {% for ep in audio_episodes[:3] %}
+                        <div class="audio-item mb-15">
+                            <h6 class="audio-title">{{ ep.title }}</h6>
+                            <audio controls preload="none" class="w-100">
+                                <source src="{{ ep.mp3_path }}" type="audio/mpeg">
+                            </audio>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No audio episodes yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURED VIDEOS -->
+        {% if featured_videos|length > 0 %}
+        <div class="videos-section mt-40 mb-40">
+            <div class="d-flex justify-content-between align-items-center mb-30">
+                <h5 class="section-heading mb-0">VIDEOS</h5>
+                <a href="{{ url_for('videos_list') }}" class="read-past-link">View All Videos »</a>
+            </div>
+            <div class="row">
+                {% for video in featured_videos %}
+                <div class="col-lg-3 col-md-6 mb-30">
+                    <article class="video-card">
+                        <div class="video-card-thumb mb-15">
+                            <a href="{{ url_for('video_detail', slug=video.slug) }}">
+                                {% if video.thumbnail_path %}
+                                <img src="{{ video.thumbnail_path }}" alt="{{ video.title }}" class="img-fluid">
+                                {% else %}
+                                <div class="video-placeholder">
+                                    <i class="fas fa-play-circle fa-3x"></i>
+                                </div>
+                                {% endif %}
+                                <span class="video-badge"><i class="fas fa-play"></i></span>
+                            </a>
+                        </div>
+                        {% if video.category %}
+                        <div class="video-card-category mb-5">{{ video.category }}</div>
+                        {% endif %}
+                        <h5 class="video-card-title">
+                            <a href="{{ url_for('video_detail', slug=video.slug) }}">{{ video.title }}</a>
+                        </h5>
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PODCAST EPISODES -->
+        {% if recent_podcasts|length > 0 %}
+        <div class="podcasts-section mt-40 mb-40">
+            <div class="d-flex justify-content-between align-items-center mb-30">
+                <h5 class="section-heading mb-0">PODCAST</h5>
+                <a href="{{ url_for('podcasts_list') }}" class="read-past-link">View All Episodes »</a>
+            </div>
+            <div class="row">
+                {% for podcast in recent_podcasts %}
+                <div class="col-lg-3 col-md-6 mb-30">
+                    <article class="podcast-card">
+                        {% if podcast.cover_image_path %}
+                        <div class="podcast-card-thumb mb-15">
+                            <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">
+                                <img src="{{ podcast.cover_image_path }}" alt="{{ podcast.title }}" class="img-fluid">
+                            </a>
+                        </div>
+                        {% endif %}
+                        <h5 class="podcast-card-title mb-10">
+                            <a href="{{ url_for('podcast_detail', slug=podcast.slug) }}">{{ podcast.title }}</a>
+                        </h5>
+                        {% if podcast.guests %}
+                        <div class="podcast-card-guests mb-10"><small>with {{ podcast.guests }}</small></div>
+                        {% endif %}
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FROM OUR ARCHIVES -->
+        {% if archive_posts|length > 0 %}
+        <div class="archives-section mt-40 mb-40">
+            <h5 class="section-heading mb-30">FROM OUR ARCHIVES</h5>
+            <div class="row">
+                {% for post in archive_posts[:4] %}
+                <div class="col-lg-3 col-md-6 mb-30">
+                    <article class="archive-card">
+                        {% if post.hero_image_path %}
+                        <div class="archive-card-thumb mb-15">
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}">
+                                <img src="{{ post.hero_image_path }}" alt="{{ post.title }}" class="img-fluid">
+                            </a>
+                        </div>
+                        {% endif %}
+                        <h5 class="archive-card-title mb-10">
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                        </h5>
+                        <div class="archive-card-meta">
+                            {{ post.published_at.strftime('%B %d, %Y') if post.published_at else '' }}
+                        </div>
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

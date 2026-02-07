@@ -52,6 +52,8 @@ services:
         python migrate_add_featured_column.py &&
         python migrate_nested_comments.py &&
         python migrate_read_events_anonymous.py &&
+        python migrate_add_audio_episodes.py &&
+        python migrate_add_content_types.py &&
         python migrate_posts.py &&
         python app.py
       "

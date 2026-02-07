@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if podcast else 'New' }} Podcast - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit' if podcast else 'New' }} Podcast</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin.podcasts_list') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="title">Podcast Title *</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ podcast.title if podcast else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="slug">Slug * <small class="text-muted">(URL-friendly)</small></label>
+        <input type="text" class="form-control" id="slug" name="slug" value="{{ podcast.slug if podcast else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ podcast.description if podcast else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="guests">Guests <small class="text-muted">(comma-separated)</small></label>
+        <input type="text" class="form-control" id="guests" name="guests" value="{{ podcast.guests if podcast else '' }}" placeholder="John Doe, Jane Smith">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="season_number">Season Number <small class="text-muted">(optional)</small></label>
+            <input type="number" class="form-control" id="season_number" name="season_number" value="{{ podcast.season_number if podcast else '' }}" min="1">
+        </div>
+
+        <div class="form-group col-md-6">
+            <label for="episode_number">Episode Number <small class="text-muted">(optional)</small></label>
+            <input type="number" class="form-control" id="episode_number" name="episode_number" value="{{ podcast.episode_number if podcast else '' }}" min="1">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="mp3_file">MP3 File * {% if podcast %}(leave empty to keep existing){% endif %}</label>
+        {% if podcast and podcast.mp3_path %}
+        <div class="mb-2">
+            <audio controls class="w-100">
+                <source src="{{ podcast.mp3_path }}" type="audio/mpeg">
+            </audio>
+        </div>
+        {% endif %}
+        <input type="file" class="form-control-file" id="mp3_file" name="mp3_file" accept="audio/mpeg" {% if not podcast %}required{% endif %}>
+    </div>
+
+    <div class="form-group">
+        <label for="cover_image">Cover Image</label>
+        {% if podcast and podcast.cover_image_path %}
+        <div class="mb-2">
+            <img src="{{ podcast.cover_image_path }}" alt="Current cover" style="max-width: 300px; max-height: 300px;">
+        </div>
+        {% endif %}
+        <input type="file" class="form-control-file" id="cover_image" name="cover_image" accept="image/*">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label for="status">Status</label>
+            <select class="form-control" id="status" name="status">
+                <option value="published" {% if podcast and podcast.status == 'published' %}selected{% endif %}>Published</option>
+                <option value="draft" {% if podcast and podcast.status == 'draft' %}selected{% endif %}>Draft</option>
+            </select>
+        </div>
+
+        <div class="form-group col-md-4">
+            <label for="is_featured">Featured</label>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" value="1" {% if podcast and podcast.is_featured %}checked{% endif %}>
+                <label class="form-check-label" for="is_featured">
+                    Show in featured section
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ 'Update' if podcast else 'Create' }} Podcast
+    </button>
+</form>
+
+<script>
+// Auto-generate slug from title
+document.getElementById('title').addEventListener('blur', function() {
+    const slug = document.getElementById('slug');
+    if (!slug.value) {
+        slug.value = this.value.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+});
+</script>
+{% endblock %}

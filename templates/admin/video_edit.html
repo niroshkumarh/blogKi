@@ -1,0 +1,111 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if video else 'New' }} Video - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit' if video else 'New' }} Video</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin.videos_list') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="title">Video Title *</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ video.title if video else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="slug">Slug * <small class="text-muted">(URL-friendly)</small></label>
+        <input type="text" class="form-control" id="slug" name="slug" value="{{ video.slug if video else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ video.description if video else '' }}</textarea>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="video_type">Video Type *</label>
+            <select class="form-control" id="video_type" name="video_type" required>
+                <option value="youtube" {% if video and video.video_type == 'youtube' %}selected{% endif %}>YouTube</option>
+                <option value="vimeo" {% if video and video.video_type == 'vimeo' %}selected{% endif %}>Vimeo</option>
+                <option value="upload" {% if video and video.video_type == 'upload' %}selected{% endif %}>Uploaded Video</option>
+            </select>
+        </div>
+
+        <div class="form-group col-md-6">
+            <label for="video_url">Video URL * <small class="text-muted">(YouTube/Vimeo URL or file path)</small></label>
+            <input type="text" class="form-control" id="video_url" name="video_url" value="{{ video.video_url if video else '' }}" required>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="category">Category <small class="text-muted">(e.g., Interview, Documentary, News)</small></label>
+        <input type="text" class="form-control" id="category" name="category" value="{{ video.category if video else '' }}">
+    </div>
+
+    <div class="form-group">
+        <label for="thumbnail">Thumbnail Image</label>
+        {% if video and video.thumbnail_path %}
+        <div class="mb-2">
+            <img src="{{ video.thumbnail_path }}" alt="Current thumbnail" style="max-width: 300px; max-height: 200px;">
+        </div>
+        {% endif %}
+        <input type="file" class="form-control-file" id="thumbnail" name="thumbnail" accept="image/*">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label for="status">Status</label>
+            <select class="form-control" id="status" name="status">
+                <option value="published" {% if video and video.status == 'published' %}selected{% endif %}>Published</option>
+                <option value="draft" {% if video and video.status == 'draft' %}selected{% endif %}>Draft</option>
+            </select>
+        </div>
+
+        <div class="form-group col-md-4">
+            <label for="is_featured">Featured</label>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" value="1" {% if video and video.is_featured %}checked{% endif %}>
+                <label class="form-check-label" for="is_featured">
+                    Show in featured section
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ 'Update' if video else 'Create' }} Video
+    </button>
+</form>
+
+<script>
+// Auto-generate slug from title
+document.getElementById('title').addEventListener('blur', function() {
+    const slug = document.getElementById('slug');
+    if (!slug.value) {
+        slug.value = this.value.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+});
+</script>
+{% endblock %}
