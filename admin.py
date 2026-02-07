@@ -2,12 +2,17 @@
 Admin module - Dashboard and post editor
 """
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
+import base64
+from io import BytesIO
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, send_file
 from werkzeug.utils import secure_filename
 from models import db, Post, User, Comment, Like, ReadEvent
 from auth import admin_required
 from datetime import datetime
 from sqlalchemy import func
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font, Alignment
+from PIL import Image
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -613,4 +618,259 @@ def upload_image():
     except Exception as e:
         current_app.logger.error(f"Image upload error: {e}")
         return jsonify({'error': 'Upload failed'}), 500
+
+
+@admin_bp.route('/posts/export')
+@admin_required
+def posts_export():
+    """Export all posts to Excel with images as base64"""
+    try:
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Posts"
+        
+        # Define headers
+        headers = [
+            'ID', 'Slug', 'Title', 'Month Key', 'Published At', 
+            'Status', 'Is Featured', 'Hero Image Path', 'Hero Image (Base64)', 'Hero Image Filename',
+            'HTML Content', 'Excerpt', 'Category', 'Read Time', 'Created At', 'Updated At'
+        ]
+        
+        # Write headers with styling
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Get all posts
+        posts = Post.query.order_by(Post.created_at.desc()).all()
+        
+        # Write post data
+        for row_num, post in enumerate(posts, 2):
+            # Convert hero image to base64 if exists
+            hero_image_base64 = ''
+            hero_image_filename = ''
+            
+            if post.hero_image_path:
+                # Try multiple possible image locations
+                image_found = False
+                possible_paths = [
+                    # Try uploads folder first
+                    os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(post.hero_image_path)),
+                    # Try relative to app root
+                    os.path.join('/app', post.hero_image_path.lstrip('/')),
+                    # Try as absolute path
+                    post.hero_image_path
+                ]
+                
+                for image_path in possible_paths:
+                    if os.path.exists(image_path):
+                        try:
+                            with open(image_path, 'rb') as img_file:
+                                hero_image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+                                hero_image_filename = os.path.basename(post.hero_image_path)
+                                image_found = True
+                                break
+                        except Exception as e:
+                            current_app.logger.error(f"Error reading image {image_path}: {e}")
+                            continue
+                
+                if not image_found:
+                    current_app.logger.warning(f"Image not found for post {post.slug}: {post.hero_image_path}")
+            
+            # Write row data
+            ws.cell(row=row_num, column=1, value=post.id)
+            ws.cell(row=row_num, column=2, value=post.slug)
+            ws.cell(row=row_num, column=3, value=post.title)
+            ws.cell(row=row_num, column=4, value=post.month_key)
+            ws.cell(row=row_num, column=5, value=str(post.published_at) if post.published_at else '')
+            ws.cell(row=row_num, column=6, value=post.status)
+            ws.cell(row=row_num, column=7, value='Yes' if post.is_featured else 'No')
+            ws.cell(row=row_num, column=8, value=post.hero_image_path or '')
+            ws.cell(row=row_num, column=9, value=hero_image_base64)
+            ws.cell(row=row_num, column=10, value=hero_image_filename)
+            ws.cell(row=row_num, column=11, value=post.html_content or '')
+            ws.cell(row=row_num, column=12, value=post.excerpt or '')
+            ws.cell(row=row_num, column=13, value=post.category or '')
+            ws.cell(row=row_num, column=14, value=post.read_time or '')
+            ws.cell(row=row_num, column=15, value=str(post.created_at))
+            ws.cell(row=row_num, column=16, value=str(post.updated_at) if post.updated_at else '')
+        
+        # Adjust column widths
+        ws.column_dimensions['A'].width = 10   # ID
+        ws.column_dimensions['B'].width = 30   # Slug
+        ws.column_dimensions['C'].width = 50   # Title
+        ws.column_dimensions['D'].width = 15   # Month Key
+        ws.column_dimensions['E'].width = 20   # Published At
+        ws.column_dimensions['F'].width = 12   # Status
+        ws.column_dimensions['G'].width = 12   # Is Featured
+        ws.column_dimensions['H'].width = 40   # Hero Image Path
+        ws.column_dimensions['I'].width = 20   # Base64 (collapsed)
+        ws.column_dimensions['J'].width = 30   # Filename
+        ws.column_dimensions['K'].width = 20   # HTML Content (collapsed)
+        ws.column_dimensions['L'].width = 40   # Excerpt
+        ws.column_dimensions['M'].width = 20   # Category
+        ws.column_dimensions['N'].width = 12   # Read Time
+        ws.column_dimensions['O'].width = 20   # Created At
+        ws.column_dimensions['P'].width = 20   # Updated At
+        
+        # Save to BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Generate filename with timestamp
+        filename = f"posts_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        # Don't flash message - it will show on the download page
+        # flash(f'Successfully exported {len(posts)} posts to Excel', 'success')
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Export error: {e}")
+        flash(f'Export failed: {str(e)}', 'error')
+        return redirect(url_for('admin.posts_list'))
+
+
+@admin_bp.route('/posts/import', methods=['GET', 'POST'])
+@admin_required
+def posts_import():
+    """Import posts from Excel file"""
+    if request.method == 'POST':
+        try:
+            # Check if file was uploaded
+            if 'file' not in request.files:
+                flash('No file uploaded', 'error')
+                return redirect(url_for('admin.posts_list'))
+            
+            file = request.files['file']
+            
+            if file.filename == '':
+                flash('No file selected', 'error')
+                return redirect(url_for('admin.posts_list'))
+            
+            if not file.filename.endswith('.xlsx'):
+                flash('Only .xlsx files are supported', 'error')
+                return redirect(url_for('admin.posts_list'))
+            
+            # Load workbook
+            wb = load_workbook(file, data_only=True)
+            ws = wb.active
+            
+            # Get headers (first row)
+            headers = [cell.value for cell in ws[1]]
+            
+            # Validate headers
+            required_headers = ['Slug', 'Title', 'Month Key', 'Status']
+            for header in required_headers:
+                if header not in headers:
+                    flash(f'Missing required column: {header}', 'error')
+                    return redirect(url_for('admin.posts_list'))
+            
+            # Import posts
+            imported_count = 0
+            updated_count = 0
+            skipped_count = 0
+            
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), 2):
+                try:
+                    # Create dict from row
+                    row_data = dict(zip(headers, row))
+                    
+                    # Skip empty rows
+                    if not row_data.get('Slug') or not row_data.get('Title'):
+                        skipped_count += 1
+                        continue
+                    
+                    # Check if post exists
+                    existing_post = Post.query.filter_by(slug=row_data['Slug']).first()
+                    
+                    if existing_post:
+                        # Update existing post
+                        post = existing_post
+                        updated_count += 1
+                    else:
+                        # Create new post
+                        post = Post()
+                        imported_count += 1
+                    
+                    # Set basic fields
+                    post.slug = row_data['Slug']
+                    post.title = row_data['Title']
+                    post.month_key = row_data['Month Key']
+                    post.status = row_data.get('Status', 'draft')
+                    post.is_featured = row_data.get('Is Featured', 'No') == 'Yes'
+                    post.html_content = row_data.get('HTML Content', '')
+                    post.excerpt = row_data.get('Excerpt', '')
+                    post.category = row_data.get('Category', '')
+                    post.read_time = row_data.get('Read Time')
+                    
+                    # Parse published_at
+                    if row_data.get('Published At'):
+                        try:
+                            post.published_at = datetime.strptime(str(row_data['Published At']), '%Y-%m-%d %H:%M:%S')
+                        except:
+                            # Try without time
+                            try:
+                                post.published_at = datetime.strptime(str(row_data['Published At']).split()[0], '%Y-%m-%d')
+                            except:
+                                pass
+                    
+                    # Handle hero image
+                    # Priority: 1. Hero Image Path (if exists), 2. Base64 decode and save
+                    hero_image_path = str(row_data.get('Hero Image Path', '') or '').strip()
+                    hero_image_base64 = row_data.get('Hero Image (Base64)', '') or ''
+                    hero_image_filename = row_data.get('Hero Image Filename', '') or ''
+                    
+                    if hero_image_path:
+                        # Use existing path (for cases where image already exists in assets)
+                        post.hero_image_path = hero_image_path
+                    elif hero_image_base64 and hero_image_filename:
+                        # Decode and save base64 image
+                        try:
+                            # Decode base64
+                            image_data = base64.b64decode(hero_image_base64)
+                            
+                            # Save image
+                            filename = secure_filename(hero_image_filename)
+                            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                            
+                            with open(filepath, 'wb') as f:
+                                f.write(image_data)
+                            
+                            post.hero_image_path = f"/uploads/{filename}"
+                            
+                        except Exception as e:
+                            current_app.logger.error(f"Error importing image for row {row_num}: {e}")
+                    
+                    # Add to session if new
+                    if not existing_post:
+                        db.session.add(post)
+                    
+                except Exception as e:
+                    current_app.logger.error(f"Error importing row {row_num}: {e}")
+                    skipped_count += 1
+                    continue
+            
+            # Commit all changes
+            db.session.commit()
+            
+            flash(f'Import complete! Imported: {imported_count}, Updated: {updated_count}, Skipped: {skipped_count}', 'success')
+            return redirect(url_for('admin.posts_list'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Import error: {e}")
+            flash(f'Import failed: {str(e)}', 'error')
+            return redirect(url_for('admin.posts_list'))
+    
+    # GET request - show import form
+    return render_template('admin/posts_import.html')
 

@@ -212,9 +212,9 @@ def callback():
             flash(f'Welcome back, {user.name}! (Admin)', 'success')
             return redirect(url_for('admin.dashboard'))
         
-        # If normal user, redirect to blog archive
+        # If normal user, redirect to homepage (which will redirect to latest month)
         flash(f'Welcome, {user.name}!', 'success')
-        return redirect(url_for('archive', month_key='2026-01'))
+        return redirect(url_for('index'))
         
     except Exception as e:
         current_app.logger.error(f"Auth callback error: {e}")

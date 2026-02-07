@@ -79,19 +79,23 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 @app.route('/')
 @login_required
 def index():
-    """Redirect to latest month archive (category-grid equivalent)"""
-    # Find the latest published post to determine the current month
-    latest_post = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).first()
+    """Redirect to latest month archive (based on month_key, not published date)"""
+    # FIRST PRIORITY: Find the latest month_key with published posts
+    latest_month = db.session.query(Post.month_key).filter_by(status='published').order_by(Post.month_key.desc()).first()
     
-    if latest_post:
-        # Redirect to the month archive (this is the dynamic category-grid.html)
-        return redirect(url_for('archive', month_key=latest_post.month_key))
+    if latest_month:
+        # Redirect to the latest month
+        return redirect(url_for('archive', month_key=latest_month[0]))
     
-    # If no posts exist, show empty archive
+    # SECOND PRIORITY: If no posts exist at all, use current month
+    current_month = datetime.now().strftime('%Y-%m')
+    
+    # Get all months for sidebar
     months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
     months = [m[0] for m in months]
     
-    return render_template('archive.html', posts=[], month_key=None, months=months)
+    # Show empty archive with current month
+    return render_template('archive.html', posts=[], month_key=current_month, months=months)
 
 
 @app.route('/test')

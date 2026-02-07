@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Import Posts - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Import Posts from Excel</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Import Instructions</h5>
+                    <ul>
+                        <li>Upload an Excel file (.xlsx) exported from this system</li>
+                        <li>The file must contain columns: Slug, Title, Month Key, Status</li>
+                        <li>Images are imported from base64 data in the Excel file</li>
+                        <li>Existing posts (matched by slug) will be updated</li>
+                        <li>New posts will be created</li>
+                    </ul>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="mt-4">
+                    <div class="form-group">
+                        <label for="file" class="font-weight-bold">Select Excel File (.xlsx)</label>
+                        <input type="file" class="form-control-file" id="file" name="file" accept=".xlsx" required>
+                        <small class="form-text text-muted">
+                            Only .xlsx files exported from this system are supported.
+                        </small>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Import Posts
+                        </button>
+                        <a href="{{ url_for('admin.posts_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <div class="alert alert-warning mt-4">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Warning</h5>
+                    <p class="mb-0">
+                        Importing will update existing posts and create new ones. 
+                        Make sure to <strong>export your current posts first</strong> as a backup before importing.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
