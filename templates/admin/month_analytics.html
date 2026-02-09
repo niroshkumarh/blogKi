@@ -1,0 +1,638 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Monthly Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 mb-0">Monthly Analytics</h1>
+        {% if month_key %}
+            <div class="text-muted">Month: <code>{{ month_key }}</code></div>
+        {% endif %}
+    </div>
+
+    <form method="GET" action="{{ url_for('admin.analytics') }}" class="form-inline">
+        <label class="mr-2 text-muted">Month</label>
+        <select class="form-control mr-2" onchange="if(this.value){ window.location='{{ url_for('admin.month_analytics', month_key='__MONTH__') }}'.replace('__MONTH__', this.value); }">
+            <option value="">Select month</option>
+            {% for m in months %}
+                <option value="{{ m }}" {% if month_key == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+        <a class="btn btn-outline-secondary" href="{{ url_for('admin.analytics') }}">Latest</a>
+    </form>
+</div>
+
+{% if not month_key %}
+    <div class="alert alert-info">
+        Select a month to see analytics.
+    </div>
+{% endif %}
+
+{% if month_key %}
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Total Posts</div>
+                <div class="h3 mb-0">{{ summary.total_posts }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Total Reads</div>
+                <div class="h3 mb-0">{{ summary.total_reads }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Unique Readers</div>
+                <div class="h3 mb-0">{{ summary.unique_readers }}</div>
+                <div class="text-muted small">
+                    {{ summary.unique_logged_in_readers }} logged-in + {{ summary.unique_anon_readers }} anonymous
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Registered Users</div>
+                <div class="h3 mb-0">{{ summary.total_registered_users }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Total Likes</div>
+                <div class="h3 mb-0">{{ summary.total_likes }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Total Comments</div>
+                <div class="h3 mb-0">{{ summary.total_comments }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Comment Likes</div>
+                <div class="h3 mb-0">{{ summary.total_comment_likes }}</div>
+                <div class="text-muted small">Likes on comments (not post likes)</div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="stat-card">
+                <div class="text-muted">Reads by Day (micro granularity)</div>
+                {% if tables.reads_by_day and tables.reads_by_day|length > 0 %}
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th class="text-right">Reads</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in tables.reads_by_day %}
+                                    <tr>
+                                        <td>{{ row.day }}</td>
+                                        <td class="text-right">{{ row.reads }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-muted mt-2">No read events yet for this month.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>What time people are reading (by hour)</strong></div>
+                <div class="card-body">
+                    {% set max_hour = 0 %}
+                    {% for r in tables.reads_by_hour %}{% if r.reads > max_hour %}{% set max_hour = r.reads %}{% endif %}{% endfor %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Hour</th>
+                                    <th style="width:60%">Activity</th>
+                                    <th class="text-right">Reads</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in tables.reads_by_hour %}
+                                    <tr>
+                                        <td><code>{{ "%02d"|format(r.hour) }}:00</code></td>
+                                        <td>
+                                            <div class="progress" style="height:10px;">
+                                                {% set pct = 0 %}
+                                                {% if max_hour > 0 %}{% set pct = (r.reads * 100 / max_hour) %}{% endif %}
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ pct }}%"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-right">{{ r.reads }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-muted small mt-2">Tip: this uses <code>ReadEvent.created_at</code> timestamps.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>When people read (day of week)</strong></div>
+                <div class="card-body">
+                    {% set max_dow = 0 %}
+                    {% for r in tables.reads_by_dow %}{% if r.reads > max_dow %}{% set max_dow = r.reads %}{% endif %}{% endfor %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th style="width:60%">Activity</th>
+                                    <th class="text-right">Reads</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in tables.reads_by_dow %}
+                                    <tr>
+                                        <td><strong>{{ r.day }}</strong></td>
+                                        <td>
+                                            <div class="progress" style="height:10px;">
+                                                {% set pct = 0 %}
+                                                {% if max_dow > 0 %}{% set pct = (r.reads * 100 / max_dow) %}{% endif %}
+                                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ pct }}%"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-right">{{ r.reads }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>How far they read (scroll/progress buckets)</strong></div>
+                <div class="card-body">
+                    {% if tables.progress_buckets and tables.progress_buckets|length > 0 %}
+                        {% set max_b = 0 %}
+                        {% for r in tables.progress_buckets %}{% if r.count > max_b %}{% set max_b = r.count %}{% endif %}{% endfor %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Bucket</th>
+                                        <th style="width:60%">Distribution</th>
+                                        <th class="text-right">Events</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.progress_buckets %}
+                                        <tr>
+                                            <td><code>{{ r.label }}</code></td>
+                                            <td>
+                                                <div class="progress" style="height:10px;">
+                                                    {% set pct = 0 %}
+                                                    {% if max_b > 0 %}{% set pct = (r.count * 100 / max_b) %}{% endif %}
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ pct }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-right">{{ r.count }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-muted small mt-2">This uses <code>ReadEvent.percent</code> values.</div>
+                    {% else %}
+                        <div class="text-muted">No progress data yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>How they move (post-to-post transitions)</strong></div>
+                <div class="card-body">
+                    {% if tables.transitions and tables.transitions|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th class="text-right">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.transitions %}
+                                        <tr>
+                                            <td class="small">
+                                                {% if r.from_slug %}
+                                                    <a href="{{ url_for('post_detail', slug=r.from_slug) }}" target="_blank">{{ r.from_title }}</a>
+                                                {% else %}
+                                                    {{ r.from_title }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">
+                                                {% if r.to_slug %}
+                                                    <a href="{{ url_for('post_detail', slug=r.to_slug) }}" target="_blank">{{ r.to_title }}</a>
+                                                {% else %}
+                                                    {{ r.to_title }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-right">{{ r.count }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-muted small mt-2">Inference rule: same reader, different post within 30 minutes.</div>
+                    {% else %}
+                        <div class="text-muted">Not enough data to infer transitions yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Post Breakdown (this month)</strong>
+                    <span class="text-muted small">Views = unique logged-in + unique anonymous</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Post</th>
+                                    <th>Slug</th>
+                                    <th class="text-right">Views</th>
+                                    <th class="text-right">Likes</th>
+                                    <th class="text-right">Comments</th>
+                                    <th class="text-right">Avg Completion</th>
+                                    <th class="text-right">Time Spent (sec)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in tables.post_rows %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
+                                        </td>
+                                        <td><code>{{ r.post.slug }}</code></td>
+                                        <td class="text-right">{{ r.views }}</td>
+                                        <td class="text-right">{{ r.likes }}</td>
+                                        <td class="text-right">{{ r.comments }}</td>
+                                        <td class="text-right">{{ r.avg_completion }}%</td>
+                                        <td class="text-right">{{ r.total_seconds }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top Posts by Views</strong></div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        {% for r in tables.top_by_views %}
+                            <li>
+                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
+                                <span class="text-muted">({{ r.views }})</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top Posts by Likes</strong></div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        {% for r in tables.top_by_likes %}
+                            <li>
+                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
+                                <span class="text-muted">({{ r.likes }})</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top Posts by Comments</strong></div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        {% for r in tables.top_by_comments %}
+                            <li>
+                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
+                                <span class="text-muted">({{ r.comments }})</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Who liked what (this month)</strong></div>
+                <div class="card-body">
+                    {% if tables.like_rows and tables.like_rows|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>When</th>
+                                        <th>User</th>
+                                        <th>Post</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.like_rows %}
+                                        <tr>
+                                            <td class="text-muted small">{{ r.liked_at }}</td>
+                                            <td>
+                                                {{ r.user_name or r.user_email }}
+                                                <div class="text-muted small">{{ r.user_email }}</div>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No likes yet for this month.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Who commented what (this month)</strong></div>
+                <div class="card-body">
+                    {% if tables.comment_rows and tables.comment_rows|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>When</th>
+                                        <th>User</th>
+                                        <th>Post</th>
+                                        <th>Comment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.comment_rows %}
+                                        <tr>
+                                            <td class="text-muted small">{{ r.commented_at }}</td>
+                                            <td>
+                                                {{ r.user_name or r.user_email }}
+                                                <div class="text-muted small">{{ r.user_email }}</div>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
+                                            </td>
+                                            <td class="small">{{ r.body }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No comments yet for this month.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Who liked which comment (this month)</strong>
+                    <span class="text-muted small">Liker → Comment author</span>
+                </div>
+                <div class="card-body">
+                    {% if tables.comment_like_rows and tables.comment_like_rows|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>When</th>
+                                        <th>Liker</th>
+                                        <th>Comment author</th>
+                                        <th>Post</th>
+                                        <th>Comment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.comment_like_rows %}
+                                        <tr>
+                                            <td class="text-muted small">{{ r.liked_at }}</td>
+                                            <td>
+                                                {{ r.liker_name or r.liker_email }}
+                                                <div class="text-muted small">{{ r.liker_email }}</div>
+                                            </td>
+                                            <td>
+                                                {{ r.author_name or r.author_email }}
+                                                <div class="text-muted small">{{ r.author_email }}</div>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
+                                            </td>
+                                            <td class="small">{{ r.comment_body }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No comment likes yet for this month.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top comments by likes (this month)</strong></div>
+                <div class="card-body">
+                    {% if tables.top_comments_by_likes and tables.top_comments_by_likes|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Post</th>
+                                        <th>Comment</th>
+                                        <th class="text-right">Likes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in tables.top_comments_by_likes %}
+                                        <tr>
+                                            <td class="small text-muted">Post {{ r.post_id }}</td>
+                                            <td class="small">{{ (r.comment.body or '')[:220] }}</td>
+                                            <td class="text-right">{{ r.likes }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No comments found for this month.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top IPs (reads)</strong></div>
+                <div class="card-body">
+                    {% if tables.top_ips and tables.top_ips|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>IP</th>
+                                        <th class="text-right">Reads</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ip, cnt in tables.top_ips %}
+                                        <tr>
+                                            <td><code>{{ ip }}</code></td>
+                                            <td class="text-right">{{ cnt }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-muted small mt-2">Note: this is from read events. Likes/comments don’t yet store IP/user-agent.</div>
+                    {% else %}
+                        <div class="text-muted">No read events with IP address.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Top User Agents (reads)</strong></div>
+                <div class="card-body">
+                    {% if tables.top_user_agents and tables.top_user_agents|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>User Agent</th>
+                                        <th class="text-right">Reads</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ua, cnt in tables.top_user_agents %}
+                                        <tr>
+                                            <td class="small">{{ ua }}</td>
+                                            <td class="text-right">{{ cnt }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No read events with user-agent.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Recent read events (micro)</strong></div>
+                <div class="card-body">
+                    {% if tables.recent_reads and tables.recent_reads|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>When</th>
+                                        <th>Post</th>
+                                        <th>Reader</th>
+                                        <th class="text-right">%</th>
+                                        <th class="text-right">Seconds</th>
+                                        <th>IP</th>
+                                        <th>User Agent</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for e in tables.recent_reads %}
+                                        <tr>
+                                            <td class="text-muted small">{{ e.created_at }}</td>
+                                            <td>
+                                                {% if e.post %}
+                                                    <a href="{{ url_for('post_detail', slug=e.post.slug) }}" target="_blank">{{ e.post.title }}</a>
+                                                {% else %}
+                                                    <span class="text-muted">Post {{ e.post_id }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">{{ e.get_reader_label() }}</td>
+                                            <td class="text-right small">{{ e.percent or 0 }}</td>
+                                            <td class="text-right small">{{ e.seconds or 0 }}</td>
+                                            <td class="small"><code>{{ e.ip_address or '' }}</code></td>
+                                            <td class="small">{{ e.user_agent or '' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">No read events yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+

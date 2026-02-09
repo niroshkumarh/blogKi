@@ -108,12 +108,18 @@
                             {% for month in months[:5] %}
                             <li><a href="{{ url_for('archive', month_key=month) }}">{{ month|format_month }}</a></li>
                             {% endfor %}
+                            {% if session.is_admin %}
+                            <li><a href="{{ url_for('admin.analytics') }}"><i class="elegant-icon icon_piechart mr-5"></i> Analytics</a></li>
+                            {% endif %}
                         </ul>
                         <ul id="mobile-menu" class="d-block d-lg-none text-muted">
                             <li><a href="{{ url_for('index') }}">Home</a></li>
                             {% for month in months[:5] %}
                             <li><a href="{{ url_for('archive', month_key=month) }}">{{ month|format_month }}</a></li>
                             {% endfor %}
+                            {% if session.is_admin %}
+                            <li><a href="{{ url_for('admin.analytics') }}">Analytics</a></li>
+                            {% endif %}
                         </ul>
                     </nav>
                 </div>

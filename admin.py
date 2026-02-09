@@ -6,10 +6,11 @@ import base64
 from io import BytesIO
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, send_file
 from werkzeug.utils import secure_filename
-from models import db, Post, User, Comment, Like, ReadEvent
+from models import db, Post, User, Comment, Like, CommentLike, ReadEvent
 from auth import admin_required
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment
 from PIL import Image
@@ -70,6 +71,384 @@ def dashboard():
                           total_comments=total_comments,
                           total_likes=total_likes,
                           post_stats=post_stats)
+
+
+@admin_bp.route('/analytics')
+@admin_required
+def analytics():
+    """Redirect to latest available month analytics (or show empty state)."""
+    latest_month = db.session.query(Post.month_key).filter_by(status='published').order_by(Post.month_key.desc()).first()
+    if latest_month and latest_month[0]:
+        return redirect(url_for('admin.month_analytics', month_key=latest_month[0]))
+
+    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
+    months = [m[0] for m in months if m and m[0]]
+    flash('No published posts found yet to analyze.', 'warning')
+    return render_template('admin/month_analytics.html', month_key=None, months=months, summary={}, posts=[], tables={})
+
+
+@admin_bp.route('/analytics/month/<month_key>')
+@admin_required
+def month_analytics(month_key):
+    """Monthly analytics dashboard based on Post.month_key."""
+    # Month list for selector
+    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
+    months = [m[0] for m in months if m and m[0]]
+
+    # Posts for month
+    posts = Post.query.filter_by(status='published', month_key=month_key).order_by(Post.created_at.desc()).all()
+    post_ids = [p.id for p in posts]
+
+    if not posts:
+        flash(f'No published posts found for {month_key}.', 'warning')
+        return render_template(
+            'admin/month_analytics.html',
+            month_key=month_key,
+            months=months,
+            summary={
+                'total_posts': 0,
+                'total_reads': 0,
+                'unique_readers': 0,
+                'unique_logged_in_readers': 0,
+                'unique_anon_readers': 0,
+                'total_likes': 0,
+                'total_comment_likes': 0,
+                'total_comments': 0,
+                'total_registered_users': User.query.count(),
+            },
+            posts=[],
+            tables={},
+        )
+
+    # Summary metrics for month
+    total_posts = len(posts)
+    total_registered_users = User.query.count()
+
+    total_reads = ReadEvent.query.filter(ReadEvent.post_id.in_(post_ids)).count()
+    unique_logged_in_readers = db.session.query(ReadEvent.user_id).filter(
+        ReadEvent.post_id.in_(post_ids),
+        ReadEvent.user_id.isnot(None)
+    ).distinct().count()
+    unique_anon_readers = db.session.query(ReadEvent.anon_id).filter(
+        ReadEvent.post_id.in_(post_ids),
+        ReadEvent.anon_id.isnot(None)
+    ).distinct().count()
+    unique_readers = unique_logged_in_readers + unique_anon_readers
+
+    total_likes = Like.query.filter(Like.post_id.in_(post_ids)).count()
+    total_comments = Comment.query.filter(Comment.post_id.in_(post_ids)).count()
+    total_comment_likes = (
+        db.session.query(CommentLike.id)
+        .join(Comment, Comment.id == CommentLike.comment_id)
+        .join(Post, Post.id == Comment.post_id)
+        .filter(Post.month_key == month_key, Post.status == 'published')
+        .count()
+    )
+
+    # Aggregations per post
+    likes_by_post = dict(
+        db.session.query(Like.post_id, func.count(Like.id))
+        .filter(Like.post_id.in_(post_ids))
+        .group_by(Like.post_id)
+        .all()
+    )
+    comments_by_post = dict(
+        db.session.query(Comment.post_id, func.count(Comment.id))
+        .filter(Comment.post_id.in_(post_ids))
+        .group_by(Comment.post_id)
+        .all()
+    )
+    comment_likes_by_comment = dict(
+        db.session.query(CommentLike.comment_id, func.count(CommentLike.id))
+        .join(Comment, Comment.id == CommentLike.comment_id)
+        .filter(Comment.post_id.in_(post_ids))
+        .group_by(CommentLike.comment_id)
+        .all()
+    )
+    avg_completion_by_post = dict(
+        db.session.query(ReadEvent.post_id, func.avg(ReadEvent.percent))
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .group_by(ReadEvent.post_id)
+        .all()
+    )
+    seconds_by_post = dict(
+        db.session.query(ReadEvent.post_id, func.coalesce(func.sum(ReadEvent.seconds), 0))
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .group_by(ReadEvent.post_id)
+        .all()
+    )
+
+    post_rows = []
+    for p in posts:
+        # Unique viewers (logged-in + anon) per post
+        post_unique_users = db.session.query(ReadEvent.user_id).filter(
+            ReadEvent.post_id == p.id,
+            ReadEvent.user_id.isnot(None)
+        ).distinct().count()
+        post_unique_anon = db.session.query(ReadEvent.anon_id).filter(
+            ReadEvent.post_id == p.id,
+            ReadEvent.anon_id.isnot(None)
+        ).distinct().count()
+        post_views = post_unique_users + post_unique_anon
+
+        post_rows.append({
+            'post': p,
+            'views': post_views,
+            'unique_users': post_unique_users,
+            'unique_anon': post_unique_anon,
+            'likes': int(likes_by_post.get(p.id, 0) or 0),
+            'comments': int(comments_by_post.get(p.id, 0) or 0),
+            'avg_completion': round(float(avg_completion_by_post.get(p.id, 0) or 0), 1),
+            'total_seconds': int(seconds_by_post.get(p.id, 0) or 0),
+        })
+
+    # Sort helper tables
+    top_by_views = sorted(post_rows, key=lambda r: r['views'], reverse=True)[:10]
+    top_by_likes = sorted(post_rows, key=lambda r: r['likes'], reverse=True)[:10]
+    top_by_comments = sorted(post_rows, key=lambda r: r['comments'], reverse=True)[:10]
+
+    # Top comments by comment-like count (for posts in this month)
+    month_comments = (
+        Comment.query
+        .filter(Comment.post_id.in_(post_ids))
+        .order_by(Comment.created_at.desc())
+        .all()
+    )
+    comment_rows = [{
+        'comment': c,
+        'post_id': c.post_id,
+        'likes': int(comment_likes_by_comment.get(c.id, 0) or 0),
+    } for c in month_comments]
+    top_comments_by_likes = sorted(comment_rows, key=lambda r: r['likes'], reverse=True)[:20]
+
+    # Who liked what (for posts in this month)
+    like_events = (
+        db.session.query(Like, User, Post)
+        .join(User, User.id == Like.user_id)
+        .join(Post, Post.id == Like.post_id)
+        .filter(Post.month_key == month_key, Post.status == 'published')
+        .order_by(Like.created_at.desc())
+        .limit(300)
+        .all()
+    )
+    like_rows = [{
+        'liked_at': like.created_at,
+        'user_name': user.name,
+        'user_email': user.email,
+        'post_title': post.title,
+        'post_slug': post.slug,
+    } for (like, user, post) in like_events]
+
+    # Who commented what (for posts in this month)
+    comment_events = (
+        db.session.query(Comment, User, Post)
+        .join(User, User.id == Comment.user_id)
+        .join(Post, Post.id == Comment.post_id)
+        .filter(Post.month_key == month_key, Post.status == 'published')
+        .order_by(Comment.created_at.desc())
+        .limit(300)
+        .all()
+    )
+    comment_event_rows = [{
+        'commented_at': c.created_at,
+        'user_name': u.name,
+        'user_email': u.email,
+        'post_title': p.title,
+        'post_slug': p.slug,
+        'body': (c.body or '')[:220],
+    } for (c, u, p) in comment_events]
+
+    # Who liked which comment (for posts in this month)
+    Liker = aliased(User)
+    Author = aliased(User)
+    comment_like_events = (
+        db.session.query(CommentLike, Liker, Comment, Post, Author)
+        .join(Liker, Liker.id == CommentLike.user_id)
+        .join(Comment, Comment.id == CommentLike.comment_id)
+        .join(Post, Post.id == Comment.post_id)
+        .join(Author, Author.id == Comment.user_id)
+        .filter(Post.month_key == month_key, Post.status == 'published')
+        .order_by(CommentLike.created_at.desc())
+        .limit(300)
+        .all()
+    )
+    comment_like_rows = [{
+        'liked_at': cl.created_at,
+        'liker_name': liker.name,
+        'liker_email': liker.email,
+        'author_name': author.name,
+        'author_email': author.email,
+        'post_title': post.title,
+        'post_slug': post.slug,
+        'comment_body': (comment.body or '')[:220],
+    } for (cl, liker, comment, post, author) in comment_like_events]
+
+    # "Where" (reads only, since Like/Comment don't store ip/user_agent yet)
+    top_ips = (
+        db.session.query(ReadEvent.ip_address, func.count(ReadEvent.id))
+        .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.ip_address.isnot(None))
+        .group_by(ReadEvent.ip_address)
+        .order_by(func.count(ReadEvent.id).desc())
+        .limit(20)
+        .all()
+    )
+    top_user_agents = (
+        db.session.query(ReadEvent.user_agent, func.count(ReadEvent.id))
+        .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.user_agent.isnot(None))
+        .group_by(ReadEvent.user_agent)
+        .order_by(func.count(ReadEvent.id).desc())
+        .limit(20)
+        .all()
+    )
+    recent_reads = (
+        ReadEvent.query
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .order_by(ReadEvent.created_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    # Reads by day (micro granularity)
+    reads_by_day = (
+        db.session.query(func.date(ReadEvent.created_at), func.count(ReadEvent.id))
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .group_by(func.date(ReadEvent.created_at))
+        .order_by(func.date(ReadEvent.created_at).asc())
+        .all()
+    )
+    reads_by_day_rows = [{'day': d, 'reads': int(c)} for (d, c) in reads_by_day]
+
+    # Reads by hour (what time people are reading)
+    reads_by_hour_raw = (
+        db.session.query(func.extract('hour', ReadEvent.created_at).label('hr'), func.count(ReadEvent.id))
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .group_by('hr')
+        .order_by('hr')
+        .all()
+    )
+    hour_map = {int(hr): int(cnt) for (hr, cnt) in reads_by_hour_raw if hr is not None}
+    reads_by_hour_rows = [{'hour': h, 'reads': int(hour_map.get(h, 0))} for h in range(24)]
+
+    # Reads by day-of-week (0=Sunday..6=Saturday in Postgres)
+    reads_by_dow_raw = (
+        db.session.query(func.extract('dow', ReadEvent.created_at).label('dow'), func.count(ReadEvent.id))
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .group_by('dow')
+        .order_by('dow')
+        .all()
+    )
+    dow_names = {0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'}
+    dow_map = {int(d): int(cnt) for (d, cnt) in reads_by_dow_raw if d is not None}
+    reads_by_dow_rows = [{'dow': d, 'day': dow_names.get(d, str(d)), 'reads': int(dow_map.get(d, 0))} for d in range(7)]
+
+    # Scroll/reading progress distribution (how they are moving)
+    percent_values = (
+        db.session.query(ReadEvent.percent)
+        .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.percent.isnot(None))
+        .all()
+    )
+    buckets = [
+        ('0-10%', 0, 10),
+        ('11-25%', 11, 25),
+        ('26-50%', 26, 50),
+        ('51-75%', 51, 75),
+        ('76-90%', 76, 90),
+        ('91-100%', 91, 100),
+    ]
+    bucket_counts = {label: 0 for (label, _, _) in buckets}
+    for (p,) in percent_values:
+        try:
+            pv = int(p)
+        except Exception:
+            continue
+        for (label, lo, hi) in buckets:
+            if lo <= pv <= hi:
+                bucket_counts[label] += 1
+                break
+    progress_buckets = [{'label': label, 'count': int(bucket_counts[label])} for (label, _, _) in buckets]
+
+    # Post-to-post transitions (approximate "moving" between posts)
+    # We infer a transition if the same reader (user_id or anon_id) reads different posts within 30 minutes.
+    events = (
+        db.session.query(ReadEvent.created_at, ReadEvent.post_id, ReadEvent.user_id, ReadEvent.anon_id)
+        .filter(ReadEvent.post_id.in_(post_ids))
+        .order_by(ReadEvent.user_id.asc().nulls_last(), ReadEvent.anon_id.asc().nulls_last(), ReadEvent.created_at.asc())
+        .limit(20000)
+        .all()
+    )
+    def reader_key(user_id, anon_id):
+        if user_id is not None:
+            return f"u:{user_id}"
+        if anon_id:
+            return f"a:{anon_id}"
+        return None
+
+    from datetime import timedelta
+    transition_counts = {}
+    last_by_reader = {}
+    for created_at, post_id, user_id, anon_id in events:
+        key = reader_key(user_id, anon_id)
+        if not key or not created_at or not post_id:
+            continue
+        last = last_by_reader.get(key)
+        if last:
+            last_time, last_post = last
+            if last_post != post_id and (created_at - last_time) <= timedelta(minutes=30):
+                transition_counts[(last_post, post_id)] = transition_counts.get((last_post, post_id), 0) + 1
+        last_by_reader[key] = (created_at, post_id)
+
+    post_title_by_id = {p.id: p.title for p in posts}
+    post_slug_by_id = {p.id: p.slug for p in posts}
+    transitions_top = sorted(transition_counts.items(), key=lambda kv: kv[1], reverse=True)[:25]
+    transition_rows = [{
+        'from_post_id': a,
+        'to_post_id': b,
+        'from_title': post_title_by_id.get(a, f'Post {a}'),
+        'to_title': post_title_by_id.get(b, f'Post {b}'),
+        'from_slug': post_slug_by_id.get(a),
+        'to_slug': post_slug_by_id.get(b),
+        'count': int(cnt),
+    } for ((a, b), cnt) in transitions_top]
+
+    summary = {
+        'total_posts': total_posts,
+        'total_reads': total_reads,
+        'unique_readers': unique_readers,
+        'unique_logged_in_readers': unique_logged_in_readers,
+        'unique_anon_readers': unique_anon_readers,
+        'total_likes': total_likes,
+        'total_comment_likes': total_comment_likes,
+        'total_comments': total_comments,
+        'total_registered_users': total_registered_users,
+    }
+
+    tables = {
+        'post_rows': post_rows,
+        'top_by_views': top_by_views,
+        'top_by_likes': top_by_likes,
+        'top_by_comments': top_by_comments,
+        'like_rows': like_rows,
+        'comment_rows': comment_event_rows,
+        'comment_like_rows': comment_like_rows,
+        'top_comments_by_likes': top_comments_by_likes,
+        'top_ips': top_ips,
+        'top_user_agents': top_user_agents,
+        'recent_reads': recent_reads,
+        'reads_by_day': reads_by_day_rows,
+        'reads_by_hour': reads_by_hour_rows,
+        'reads_by_dow': reads_by_dow_rows,
+        'progress_buckets': progress_buckets,
+        'transitions': transition_rows,
+    }
+
+    return render_template(
+        'admin/month_analytics.html',
+        month_key=month_key,
+        months=months,
+        summary=summary,
+        posts=posts,
+        tables=tables,
+    )
 
 
 @admin_bp.route('/posts')
