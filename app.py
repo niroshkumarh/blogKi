@@ -4,7 +4,8 @@ Tenant-only blog with Entra ID authentication
 """
 import os
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory
+from urllib.parse import quote
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.middleware.proxy_fix import ProxyFix
 # from flask_session import Session  # Not needed - using Flask's built-in session
@@ -201,9 +202,13 @@ def post_detail(slug):
     user_liked = False
     if 'user_id' in session:
         user_liked = Like.query.filter_by(post_id=post.id, user_id=session['user_id']).first() is not None
-    
-    return render_template('post.html', post=post, comments=comments, like_count=like_count, 
-                          user_liked=user_liked)
+
+    # URL-encoded share data for Harvard-style share bar
+    share_url = quote(request.url, safe='')
+    share_title = quote(post.title, safe='')
+
+    return render_template('post.html', post=post, comments=comments, like_count=like_count,
+                          user_liked=user_liked, share_url=share_url, share_title=share_title)
 
 
 @app.template_filter('format_month')

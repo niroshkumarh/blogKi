@@ -483,7 +483,63 @@ footer {
     margin-bottom: 35px !important;
 }
 
-/* Preloader - Harvard colors */
-.preloader .circle {
+/* ========================================
+   HARVARD-STYLE PRELOADER
+   Crimson spinner + HORIZON branding
+   ======================================== */
+.harvard-preloader {
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.harvard-preloader-inner {
+    text-align: center;
+}
+
+.harvard-preloader-spinner {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 20px;
+    border: 3px solid #eee;
     border-top-color: #c41230;
+    border-radius: 50%;
+    animation: harvard-spin 0.9s linear infinite;
+}
+
+.harvard-preloader-text {
+    font-family: 'Anek Latin', 'Commissioner', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    color: #333;
+    margin: 0;
+}
+
+@keyframes harvard-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   SITE-WIDE RESPONSIVE
+   ======================================== */
+@media (max-width: 991px) {
+    .harvard-header-branding .harvard-tagline { font-size: 12px; }
+    .container { padding-left: 15px; padding-right: 15px; }
+}
+
+@media (max-width: 767px) {
+    .harvard-logo { max-height: 42px; }
+    .harvard-header-branding { padding-top: 12px; padding-bottom: 12px; }
+    .entry-title, .entry-header .entry-title { font-size: 1.75rem; line-height: 1.3; }
+    .single-content .container { padding-left: 12px; padding-right: 12px; }
+    /* Touch-friendly tap targets */
+    a.btn, button.btn { min-height: 44px; padding: 10px 20px; }
+}
+
+@media (max-width: 480px) {
+    .harvard-header-top { font-size: 12px; }
+    .harvard-social-icons a { margin-right: 10px; }
+    .entry-title { font-size: 1.5rem; }
 }

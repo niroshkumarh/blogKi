@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block title %}HORIZON | Magazine{% endblock %}
-{% block description %}Your source for news since 1984{% endblock %}
 
 {% block content %}
 <div class="container-fluid harvard-home">
@@ -47,7 +46,7 @@
                 {% if featured_posts|length > 0 %}
                 {% set main_featured = featured_posts[0] %}
                 <div class="main-featured-section">
-                    <h5 class="section-heading">UNIVERSITY NEWS</h5>
+                    <h5 class="section-heading">NEWS</h5>
                     
                     <!-- Main featured article -->
                     <article class="main-featured-article">
@@ -155,7 +154,7 @@
             <!-- HARVARD MAGAZINE IN AUDIO -->
             <div class="col-lg-6 col-md-12 mb-40">
                 <div class="audio-section">
-                    <h5 class="section-heading mb-20">HARVARD MAGAZINE IN AUDIO</h5>
+                    <h5 class="section-heading mb-20">AUDIO</h5>
                     {% if audio_episodes|length > 0 %}
                     <div class="audio-list">
                         {% for ep in audio_episodes[:3] %}
@@ -176,7 +175,7 @@
 
         <!-- FEATURED VIDEOS -->
         {% if featured_videos|length > 0 %}
-        <div class="videos-section mt-40 mb-40">
+        <div id="videos" class="videos-section mt-40 mb-40">
             <div class="d-flex justify-content-between align-items-center mb-30">
                 <h5 class="section-heading mb-0">VIDEOS</h5>
                 <a href="{{ url_for('videos_list') }}" class="read-past-link">View All Videos »</a>
@@ -212,7 +211,7 @@
 
         <!-- PODCAST EPISODES -->
         {% if recent_podcasts|length > 0 %}
-        <div class="podcasts-section mt-40 mb-40">
+        <div id="podcast" class="podcasts-section mt-40 mb-40">
             <div class="d-flex justify-content-between align-items-center mb-30">
                 <h5 class="section-heading mb-0">PODCAST</h5>
                 <a href="{{ url_for('podcasts_list') }}" class="read-past-link">View All Episodes »</a>
