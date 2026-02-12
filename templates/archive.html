@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}HORIZON | Reflections and Conversations{% endblock %}
+{% block title %}Kumaraguru Magazine | Reflections and Conversations{% endblock %}
 {% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}
 
 {% block extra_css %}
@@ -125,24 +125,74 @@
 {% block content %}
 <!-- Start Main content -->
 <main>
-    <!--archive header-->
-    <div class="archive-header pt-50 text-center">
+    <!-- Issue date header (Harvard style: large light grey) -->
+    <div class="archive-header pt-40 pb-20">
         <div class="container">
-            <h2 class="font-weight-900 HORIZON-brand">HORIZON</h2>
-            <div class="breadcrumb">
+            <p class="archive-issue-date">{% if month_key %}{{ month_key|format_month }}{% else %}Current Issue{% endif %}</p>
+            <div class="breadcrumb archive-breadcrumb">
                 <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
-                <span></span> {% if month_key %}{{ month_key|format_month }}{% else %}All Posts{% endif %}
+                <span class="mx-2">/</span>
+                <span>{% if month_key %}{{ month_key|format_month }}{% else %}All Posts{% endif %}</span>
             </div>
-            <div class="bt-1 border-color-1 mt-30 mb-50"></div>
         </div>
     </div>
     
     <div class="container">
+        {% if posts|length > 0 %}
+        <!-- Cover + Features block (Harvard style: cover left, two features right) -->
+        <div class="row archive-cover-features mb-50">
+            <div class="col-lg-4 col-md-12 mb-30">
+                <div class="archive-cover-block">
+                    {% if featured_posts|length > 0 and featured_posts[0].hero_image_path %}
+                    <a href="{{ url_for('post_detail', slug=featured_posts[0].slug) }}">
+                        <div class="archive-cover-img" style="background-image: url({{ featured_posts[0].hero_image_path }})"></div>
+                    </a>
+                    <p class="archive-on-cover mt-15">On the Cover: {{ featured_posts[0].title[:50] }}{% if featured_posts[0].title|length > 50 %}...{% endif %}</p>
+                    <a href="{{ url_for('post_detail', slug=featured_posts[0].slug) }}" class="read-more-link">Read More</a>
+                    {% else %}
+                    <a href="{{ url_for('post_detail', slug=posts[0].slug) if posts else '#' }}">
+                        <div class="archive-cover-placeholder">
+                            <span class="archive-cover-logo">KUMARAGURU</span>
+                            <span class="archive-cover-logo-sub">MAGAZINE</span>
+                            {% if month_key %}<span class="archive-cover-date">{{ month_key|format_month }}</span>{% endif %}
+                        </div>
+                    </a>
+                    <p class="archive-on-cover mt-15">Current Issue</p>
+                    <a href="{{ url_for('post_detail', slug=posts[0].slug) if posts else '#' }}" class="read-more-link">Read More</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-8 col-md-12 mb-30">
+                <h5 class="section-heading">Features</h5>
+                <div class="row">
+                    {% for post in (featured_posts[:2] if featured_posts|length > 0 else posts[:2]) %}
+                    <div class="col-md-6 mb-25">
+                        <article class="archive-feature-item">
+                            {% if post.hero_image_path %}
+                            <div class="archive-feature-thumb mb-15">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">
+                                    <img src="{{ post.hero_image_path }}" alt="{{ post.title }}" class="img-fluid">
+                                </a>
+                            </div>
+                            {% endif %}
+                            <h3 class="archive-feature-title mb-10">
+                                <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                            </h3>
+                            {% if post.excerpt %}
+                            <p class="archive-feature-excerpt mb-10">{{ post.excerpt[:120] }}{% if post.excerpt|length > 120 %}...{% endif %}</p>
+                            {% endif %}
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}" class="read-more-link">Read More</a>
+                        </article>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
         <div class="loop-grid mb-30">
             <div class="row">
-                {% if posts|length > 0 %}
-                
                 {% if featured_posts|length > 0 %}
+                <h5 class="section-heading mt-20">In This Issue</h5>
                 <!-- Featured Carousel - Only shows if featured posts exist -->
                 <div class="col-lg-8 col-md-12 mb-30">
                     <div class="carausel-post-1 hover-up border-radius-10 overflow-hidden transition-normal position-relative wow fadeInUp animated">
@@ -163,7 +213,7 @@
                                         </h3>
                                         <div class="entry-meta meta-1 font-small text-white mt-10 pr-5 pl-5">
                                             <span class="post-on">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
-                                            <span class="hit-count has-dot">{{ post.excerpt or 'HORIZON' }}</span>
+                                            <span class="hit-count has-dot">{{ post.excerpt or 'Kumaraguru Magazine' }}</span>
                                         </div>
                                     </div>
                                 </div>

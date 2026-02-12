@@ -20,17 +20,27 @@ h1, h2, h3, h4, h5, h6 {
     color: #000;
 }
 
-/* Section Headings */
+/* Section Headings (Harvard: red text, uppercase) */
 .section-heading {
     font-family: 'Commissioner', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #000;
+    color: #c41230;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 3px solid #c41230;
+    border-bottom: 2px solid #c41230;
+}
+
+/* Home issue date (Harvard: large light grey at top of content) */
+.home-issue-date {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: #999;
+    letter-spacing: 0.02em;
+    margin-bottom: 24px;
 }
 
 /* LATEST NEWS Section (Left Column) */
@@ -279,6 +289,184 @@ h1, h2, h3, h4, h5, h6 {
     color: #fff;
     text-align: center;
     padding: 10px;
+}
+
+.magazine-cover-date {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+}
+
+.magazine-current-label {
+    font-size: 12px;
+    color: #999;
+}
+
+/* In the Headlines */
+.headlines-list {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.headline-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+    text-decoration: none;
+}
+
+.headline-title:hover {
+    color: #c41230;
+}
+
+.headline-excerpt {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* Social Media section */
+.social-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.social-grid-item {
+    aspect-ratio: 1;
+}
+
+.social-grid-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+}
+
+.social-grid-placeholder:hover {
+    background: #e5e5e5;
+    color: #c41230;
+}
+
+.social-follow-list a {
+    color: #333;
+    text-decoration: none;
+}
+
+.social-follow-list a:hover {
+    color: #c41230;
+}
+
+/* Archive page: issue date + cover + features (Harvard feel) */
+.archive-issue-date {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: #999;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+}
+
+.archive-breadcrumb {
+    font-size: 13px;
+    color: #666;
+}
+
+.archive-breadcrumb a {
+    color: #666;
+    text-decoration: none;
+}
+
+.archive-breadcrumb a:hover {
+    color: #c41230;
+}
+
+.archive-cover-img {
+    width: 100%;
+    padding-bottom: 140%;
+    background-size: cover;
+    background-position: center;
+    background-color: #f0f0f0;
+}
+
+.archive-cover-placeholder {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: 320px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.archive-cover-placeholder .archive-cover-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: #c41230;
+    font-family: 'Crimson Text', Georgia, serif;
+    display: block;
+}
+
+.archive-cover-placeholder .archive-cover-logo-sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.08em;
+    font-family: 'Crimson Text', Georgia, serif;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.archive-cover-placeholder .archive-cover-date {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+}
+
+.archive-on-cover {
+    font-size: 13px;
+    color: #555;
+}
+
+.archive-feature-thumb {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.archive-feature-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.archive-feature-title {
+    font-family: 'Commissioner', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.archive-feature-title a {
+    color: #000;
+    text-decoration: none;
+}
+
+.archive-feature-title a:hover {
+    color: #c41230;
+}
+
+.archive-feature-excerpt {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #555;
 }
 
 /* AUDIO Section */

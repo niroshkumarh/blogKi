@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}HORIZON | Magazine{% endblock %}
+{% block title %}Kumaraguru Magazine | Magazine{% endblock %}
 
 {% block content %}
 <div class="container-fluid harvard-home">
     <div class="container pt-30 pb-30">
-        
         <!-- 3-COLUMN LAYOUT (Harvard style) -->
         <div class="row">
             <!-- LEFT: LATEST NEWS -->
-            <div class="col-lg-3 col-md-12 mb-30">
+            <div id="latest" class="col-lg-3 col-md-12 mb-30">
                 <div class="latest-news-section">
                     <h5 class="section-heading">LATEST NEWS</h5>
                     <div class="latest-news-list">
@@ -118,14 +117,17 @@
         </div>
         {% endif %}
 
-        <!-- THE MAGAZINE + AUDIO (side by side) -->
+        <!-- THE MAGAZINE + AUDIO / IN THE HEADLINES (side by side) -->
         <div class="row mt-40">
             <!-- THE MAGAZINE -->
             <div class="col-lg-6 col-md-12 mb-40">
                 <div class="magazine-section">
                     <div class="d-flex justify-content-between align-items-center mb-20">
-                        <h5 class="section-heading mb-0">THE MAGAZINE</h5>
-                        <a href="{{ url_for('archive', month_key=past_issue_keys[0]) if past_issue_keys else '#' }}" class="read-past-link">Read Past Issues »</a>
+                        <div>
+                            <h5 class="section-heading mb-0">THE MAGAZINE</h5>
+                            <p class="magazine-current-label mb-0 mt-1">Current Issue</p>
+                        </div>
+                        <a href="{{ url_for('archive', month_key=past_issue_keys[0]) if past_issue_keys else '#' }}" class="read-past-link">Read More</a>
                     </div>
                     
                     <div class="magazine-covers">
@@ -133,9 +135,10 @@
                         <div class="magazine-cover-item">
                             <a href="{{ url_for('archive', month_key=current_issue_key) }}">
                                 <div class="magazine-cover-placeholder">
-                                    <div class="cover-text">{{ current_issue_key|format_month }}</div>
+                                    <div class="cover-text">Current Issue</div>
                                 </div>
                             </a>
+                            <p class="magazine-cover-date mt-2 mb-0">{{ current_issue_key|format_month }}</p>
                         </div>
                         {% endif %}
                         {% for issue_key in past_issue_keys[:5] %}
@@ -145,16 +148,17 @@
                                     <div class="cover-text">{{ issue_key|format_month }}</div>
                                 </div>
                             </a>
+                            <p class="magazine-cover-date mt-2 mb-0">{{ issue_key|format_month }}</p>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
-            <!-- HARVARD MAGAZINE IN AUDIO -->
+            <!-- AUDIO + IN THE HEADLINES -->
             <div class="col-lg-6 col-md-12 mb-40">
-                <div class="audio-section">
-                    <h5 class="section-heading mb-20">AUDIO</h5>
+                <div class="audio-section mb-30">
+                    <h5 class="section-heading mb-20">KUMARAGURU MAGAZINE IN AUDIO</h5>
                     {% if audio_episodes|length > 0 %}
                     <div class="audio-list">
                         {% for ep in audio_episodes[:3] %}
@@ -169,6 +173,45 @@
                     {% else %}
                     <p class="text-muted">No audio episodes yet.</p>
                     {% endif %}
+                </div>
+                <div class="headlines-section">
+                    <h5 class="section-heading mb-20">KUMARAGURU IN THE HEADLINES</h5>
+                    <div class="headlines-list">
+                        {% for post in latest_posts[:5] %}
+                        <div class="headline-item mb-15">
+                            <a href="{{ url_for('post_detail', slug=post.slug) }}" class="headline-title">{{ post.title }}</a>
+                            {% if post.excerpt %}
+                            <p class="headline-excerpt mb-0 mt-1">{{ post.excerpt[:80] }}{% if post.excerpt|length > 80 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOCIAL MEDIA -->
+        <div class="social-media-section mt-40 mb-40">
+            <h5 class="section-heading mb-10">SOCIAL MEDIA</h5>
+            <p class="text-muted mb-20">Follow Kumaraguru Magazine</p>
+            <div class="row">
+                <div class="col-lg-8 col-md-12 mb-30">
+                    <div class="social-grid">
+                        {% for i in range(9) %}
+                        <div class="social-grid-item">
+                            <a href="#"><div class="social-grid-placeholder"><i class="fab fa-instagram fa-2x"></i></div></a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12">
+                    <h6 class="font-weight-600 mb-15">Follow Us</h6>
+                    <div class="social-follow-list">
+                        <a href="#" class="d-block mb-10"><i class="fab fa-facebook-f mr-2"></i> Facebook</a>
+                        <a href="#" class="d-block mb-10"><i class="fab fa-x-twitter mr-2"></i> X (Twitter)</a>
+                        <a href="#" class="d-block mb-10"><i class="fab fa-instagram mr-2"></i> Instagram</a>
+                        <a href="#" class="d-block mb-10"><i class="fab fa-youtube mr-2"></i> YouTube</a>
+                    </div>
                 </div>
             </div>
         </div>

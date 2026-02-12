@@ -30,21 +30,174 @@ h1, h2, h3, h4, h5, h6 {
     color: #c41230 !important; /* Harvard crimson */
 }
 
-/* HARVARD HEADER */
+/* Top bar - white strip, SUBSCRIBE left, DONATE right (Harvard Magazine style) */
+.harvard-top-bar-white {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    font-family: 'Commissioner', Arial, sans-serif;
+    font-size: 13px;
+}
+
+.harvard-top-subscribe {
+    color: #333;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+}
+
+.harvard-top-subscribe:hover {
+    color: #c41230;
+}
+
+.harvard-latest-news-link {
+    color: #333;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.harvard-latest-news-link:hover {
+    color: #c41230;
+}
+
+.harvard-cart-link {
+    color: #333;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.harvard-cart-link:hover {
+    color: #c41230;
+}
+
+/* HARVARD HEADER - Single bar (Menu | Tagline + Logo | Socials + Log in + Donate) */
 .harvard-header {
     background: #fff;
     border-bottom: 1px solid #ddd;
 }
 
-.harvard-header-top {
-    border-bottom: 1px solid #eee;
+.harvard-header-single-bar {
+    padding: 16px 0;
+    font-family: 'Commissioner', Arial, sans-serif;
+}
+
+.harvard-top-row {
+    min-height: 60px;
+}
+
+/* Left: Menu + Search */
+.harvard-top-left {
+    min-width: 140px;
+}
+
+.harvard-menu-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    padding: 6px 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.harvard-menu-btn:hover {
+    color: #c41230;
+}
+
+.harvard-search-btn {
+    color: #333;
+    font-size: 16px;
+    margin-left: 20px;
+}
+
+.harvard-search-btn:hover {
+    color: #c41230;
+}
+
+/* Center: Tagline above logo text */
+.harvard-top-center {
+    flex: 0 0 auto;
+}
+
+.harvard-brand-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.harvard-tagline-top {
     font-size: 13px;
+    color: #333;
+    margin-bottom: 4px;
+    font-style: normal;
+}
+
+.harvard-tagline-top em {
+    font-style: italic;
+}
+
+.harvard-logo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.harvard-logo-main {
+    font-size: 28px;
+    font-weight: 700;
+    color: #c41230;
+    letter-spacing: 0.02em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.harvard-logo-sub {
+    font-size: 16px;
+    font-weight: 600;
+    color: #c41230;
+    letter-spacing: 0.05em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.harvard-header-divider {
+    height: 1px;
+    background: #e0e0e0;
+}
+
+@media (max-width: 991px) {
+    .harvard-top-row { flex-wrap: wrap; gap: 12px; }
+    .harvard-top-left { min-width: auto; order: 1; }
+    .harvard-top-center { order: 3; width: 100%; }
+    .harvard-top-right { min-width: auto; order: 2; margin-left: auto; }
+    .harvard-logo-main { font-size: 22px; }
+    .harvard-logo-sub { font-size: 14px; }
+    .harvard-social-icons { gap: 12px; }
+}
+
+@media (max-width: 576px) {
+    .harvard-header-single-bar { padding: 12px 0; }
+    .harvard-tagline-top { font-size: 11px; }
+    .harvard-logo-main { font-size: 18px; }
+    .harvard-logo-sub { font-size: 12px; }
+    .harvard-social-icons .fab { font-size: 14px; }
+    .harvard-donate-btn { padding: 5px 12px; font-size: 13px; }
+}
+
+/* Right: Socials + Log in + Donate */
+.harvard-top-right {
+    min-width: 220px;
+    justify-content: flex-end;
+}
+
+.harvard-social-icons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .harvard-social-icons a {
-    color: #666;
-    margin-right: 15px;
-    font-size: 14px;
+    color: #333;
+    font-size: 16px;
     text-decoration: none;
 }
 
@@ -53,7 +206,187 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .harvard-account-menu {
-    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+}
+
+.harvard-account-menu a:not(.btn) {
+    color: #333;
+    text-decoration: none;
+}
+
+.harvard-account-menu a:not(.btn):hover {
+    color: #c41230;
+}
+
+.harvard-login-link {
+    color: #333 !important;
+    text-decoration: none;
+}
+
+.harvard-login-link:hover {
+    color: #c41230 !important;
+}
+
+.harvard-donate-btn {
+    background: #c41230 !important;
+    border-color: #c41230 !important;
+    color: #fff !important;
+    border-radius: 4px;
+    padding: 6px 18px;
+    font-weight: 500;
+}
+
+.harvard-donate-btn:hover {
+    background: #a00f26 !important;
+    border-color: #a00f26 !important;
+    color: #fff !important;
+}
+
+/* Full-screen menu overlay (Harvard Magazine style) */
+.harvard-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    z-index: 9999;
+    overflow-y: auto;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.harvard-menu-overlay.harvard-menu-overlay-open {
+    visibility: visible;
+    opacity: 1;
+}
+
+.harvard-menu-overlay-top {
+    padding: 24px 0;
+    border-bottom: 1px solid #eee;
+    font-family: 'Commissioner', Arial, sans-serif;
+}
+
+.harvard-menu-close-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    padding: 6px 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.harvard-menu-close-btn:hover {
+    color: #c41230;
+}
+
+.harvard-menu-search {
+    color: #333;
+    font-size: 16px;
+}
+
+.harvard-menu-search:hover {
+    color: #c41230;
+}
+
+.harvard-menu-overlay-logo {
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.harvard-menu-logo-main {
+    font-size: 28px;
+    font-weight: 700;
+    color: #c41230;
+    letter-spacing: 0.02em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.harvard-menu-logo-sub {
+    font-size: 16px;
+    font-weight: 600;
+    color: #c41230;
+    letter-spacing: 0.05em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.harvard-menu-socials {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.harvard-menu-socials a {
+    color: #333;
+    font-size: 16px;
+}
+
+.harvard-menu-socials a:hover {
+    color: #c41230;
+}
+
+.harvard-menu-login {
+    color: #333;
+    text-decoration: none;
+}
+
+.harvard-menu-login:hover {
+    color: #c41230;
+}
+
+.harvard-menu-overlay-nav {
+    padding: 30px 0 60px;
+}
+
+.harvard-menu-overlay-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'Commissioner', Arial, sans-serif;
+}
+
+.harvard-menu-overlay-list li {
+    border-bottom: 1px solid #ddd;
+}
+
+.harvard-menu-overlay-list li a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: #000;
+    text-decoration: none;
+}
+
+.harvard-menu-overlay-list li a:hover {
+    color: #c41230;
+}
+
+.harvard-menu-overlay-list li a i {
+    font-size: 12px;
+    color: #999;
+}
+
+.harvard-menu-item-active {
+    color: #c41230 !important;
+    text-decoration: underline !important;
+}
+
+.harvard-menu-item-active:hover {
+    color: #a00f26 !important;
+}
+
+/* Legacy/fallback */
+.harvard-header-top {
+    border-bottom: 1px solid #eee;
     font-size: 13px;
 }
 
@@ -145,21 +478,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 991px) {
+    .harvard-header-nav {
+        display: none;
+    }
+    .harvard-header-nav.harvard-nav-open {
+        display: block;
+    }
     .harvard-header-nav .mobile-menu-toggle {
         display: block;
         margin: 0 auto;
     }
     
     .harvard-main-nav .nav {
-        display: none;
+        display: flex;
         flex-direction: column;
         background: #fff;
         padding: 20px;
         border-top: 1px solid #eee;
-    }
-    
-    .harvard-main-nav .nav.show {
-        display: flex;
     }
     
     .harvard-main-nav .nav-item {
@@ -180,6 +515,12 @@ h1, h2, h3, h4, h5, h6 {
         box-shadow: none;
         background: #f9f9f9;
         margin-left: 15px;
+    }
+}
+
+@media (min-width: 992px) {
+    .harvard-header-nav {
+        display: block !important;
     }
 }
 
@@ -323,10 +664,156 @@ audio::-webkit-media-controls-panel {
     font-weight: 600;
 }
 
-/* Footer - Harvard style */
-footer {
-    background: #f8f8f8 !important;
-    border-top: 1px solid #ddd;
+/* Footer - Dark Harvard Magazine style (black bg, white text) */
+.harvard-footer-dark {
+    background: #000 !important;
+    color: #fff;
+    font-family: 'Commissioner', Arial, sans-serif;
+}
+
+.harvard-footer-dark .footer-dark-heading {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.harvard-footer-dark .footer-dark-links li {
+    margin-bottom: 8px;
+}
+
+.harvard-footer-dark .footer-dark-links a {
+    font-size: 14px;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+}
+
+.harvard-footer-dark .footer-dark-links a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* Current Issue block */
+.footer-current-issue {
+    margin-left: auto;
+}
+
+.footer-cover-placeholder {
+    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+    border: 1px solid #444;
+    padding: 24px 16px;
+    text-align: center;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-cover-logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: #c41230;
+    letter-spacing: 0.02em;
+    font-family: 'Crimson Text', Georgia, serif;
+    display: block;
+}
+
+.footer-cover-logo-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.05em;
+    font-family: 'Crimson Text', Georgia, serif;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.footer-cover-date {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+}
+
+.footer-cover-link:hover .footer-cover-placeholder {
+    border-color: #c41230;
+}
+
+.footer-social-outline a {
+    color: #fff;
+    font-size: 18px;
+    text-decoration: none;
+    border: 1px solid #fff;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.footer-social-outline a:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* Lower section: divider + logo + copyright */
+.footer-dark-bottom {
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+.footer-dark-logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.footer-dark-logo-main {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.footer-dark-logo-sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.08em;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.footer-dark-copy {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+}
+
+.footer-dark-copy p {
+    margin: 0;
+}
+
+.footer-dark-policy {
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.footer-dark-policy a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+}
+
+.footer-dark-policy a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+    .harvard-footer-dark .footer-dark-bottom .d-flex { flex-direction: column; align-items: flex-start !important; }
+    .harvard-footer-dark .footer-dark-copy { text-align: left !important; margin-top: 16px; }
+    .footer-current-issue { margin-left: 0; }
 }
 
 .footer-copy-right {

@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{% block title %}HORIZON | Reflections and Conversations{% endblock %}</title>
-    <meta name="description" content="{% block description %}A collection of moments, conversations, and ideas that shaped my thinking.{% endblock %}">
+    <title>{% block title %}Kumaraguru Magazine | Reflections and Conversations{% endblock %}</title>
+    <meta name="description" content="{% block description %}Your independent source for Kumaraguru news.{% endblock %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/theme/favicon.png') }}">
     
-    <!-- Google Fonts - Anek Bold for HORIZON Branding -->
+    <!-- Google Fonts - Kumaraguru Magazine Branding -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-layout.css') }}">
     
-    <!-- HORIZON Branding Styles + Responsive base -->
+    <!-- Kumaraguru Magazine Branding + Responsive base -->
     <style>
         /* Smooth scroll for anchor links (e.g. #podcast, #videos) */
         html { scroll-behavior: smooth; }
@@ -45,18 +45,16 @@
         @media (max-width: 767px) {
             .harvard-main-nav .nav-link { padding: 10px 12px; font-size: 13px; }
         }
-        /* Apply Anek Bold to all HORIZON branding */
-        .HORIZON-brand,
+        /* Kumaraguru Magazine branding */
+        .magazine-brand,
         .logo-text,
-        h2.HORIZON-title,
+        h2.magazine-title,
         .admin-brand {
             font-family: 'Anek Latin', sans-serif !important;
             font-weight: 700 !important;
             letter-spacing: 0.5px;
         }
-        
-        /* Footer HORIZON text */
-        .footer-HORIZON {
+        .footer-magazine-brand {
             font-family: 'Anek Latin', sans-serif !important;
             font-weight: 700 !important;
         }
@@ -71,7 +69,7 @@
     <div class="preloader harvard-preloader">
         <div class="harvard-preloader-inner">
             <div class="harvard-preloader-spinner"></div>
-            <p class="harvard-preloader-text">HORIZON</p>
+            <p class="harvard-preloader-text">Kumaraguru Magazine</p>
         </div>
     </div>
     
@@ -95,91 +93,115 @@
         </div>
     </aside>
     
-    <!-- Header - Harvard Magazine Style -->
+    <!-- Top bar (Harvard style: white, SUBSCRIBE left, DONATE right) -->
+    <div class="harvard-top-bar-white">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <a href="#" class="harvard-top-subscribe">SUBSCRIBE</a>
+                <a href="#" class="btn btn-sm harvard-donate-btn">DONATE</a>
+            </div>
+        </div>
+    </div>
+    <!-- Header (Menu + Latest News | Logo only | Socials + CART) -->
     <header class="harvard-header">
-        <!-- Top bar with social and account -->
-        <div class="harvard-header-top">
+        <div class="harvard-header-single-bar">
             <div class="container">
-                <div class="d-flex justify-content-between align-items-center py-2">
-                    <div class="harvard-social-icons">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-x-twitter"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <div class="harvard-top-row d-flex justify-content-between align-items-center">
+                    <!-- Left: Menu + Latest News -->
+                    <div class="harvard-top-left d-flex align-items-center">
+                        <button type="button" class="harvard-menu-btn d-flex align-items-center" id="harvard-menu-toggle" aria-label="Menu">
+                            <i class="fas fa-bars mr-2"></i>
+                            <span>Menu</span>
+                        </button>
+                        <a href="{{ url_for('index') }}#latest" class="harvard-latest-news-link ml-4">Latest News</a>
                     </div>
-                    <div class="harvard-account-menu">
-                        {% if session.user_name %}
-                        <span class="mr-15">{{ session.user_name }}</span>
-                        {% if session.is_admin %}
-                        <a href="{{ url_for('admin.dashboard') }}" class="mr-15">Admin</a>
-                        {% endif %}
-                        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-dark">Logout</a>
-                        {% else %}
-                        <a href="{{ url_for('auth.login', next=request.path) }}" class="mr-10">Log in</a>
-                        <a href="#" class="btn btn-sm btn-primary">Donate</a>
-                        {% endif %}
+                    <!-- Center: Logo only (no tagline) -->
+                    <div class="harvard-top-center text-center">
+                        <a href="{{ url_for('index') }}" class="harvard-brand-link">
+                            <div class="harvard-logo-text">
+                                <span class="harvard-logo-main">KUMARAGURU</span>
+                                <span class="harvard-logo-sub">MAGAZINE</span>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- Right: Socials + CART (Log in/Admin in menu overlay only) -->
+                    <div class="harvard-top-right d-flex align-items-center">
+                        <div class="harvard-social-icons mr-4">
+                            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                            <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        </div>
+                        <a href="#" class="harvard-cart-link" aria-label="Cart"><i class="fas fa-shopping-cart"></i> Cart</a>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="harvard-header-divider"></div>
+    </header>
 
-        <!-- Logo + Tagline -->
-        <div class="harvard-header-branding text-center py-4">
-            <div class="container">
-                <a href="{{ url_for('index') }}">
-                    <img src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON" class="harvard-logo mb-2"><br>
-                    Horizon Kumaraguru
-                </a>
+    <!-- Full-screen menu overlay (Harvard Magazine style: Close | Logo | Socials + Log in + Donate, then vertical nav list) -->
+    <div id="harvard-menu-overlay" class="harvard-menu-overlay" aria-hidden="true">
+        <div class="harvard-menu-overlay-inner">
+            <!-- Top bar -->
+            <div class="harvard-menu-overlay-top">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <button type="button" class="harvard-menu-close-btn mr-3" id="harvard-menu-close" aria-label="Close menu">
+                                <i class="fas fa-times"></i><span class="ml-2">Close</span>
+                            </button>
+                            <a href="#" class="harvard-menu-search ml-4" aria-label="Search"><i class="fas fa-search"></i></a>
+                        </div>
+                        <a href="{{ url_for('index') }}" class="harvard-menu-overlay-logo">
+                            <span class="harvard-menu-logo-main">KUMARAGURU</span>
+                            <span class="harvard-menu-logo-sub">MAGAZINE</span>
+                        </a>
+                        <div class="d-flex align-items-center">
+                            <div class="harvard-menu-socials mr-4">
+                                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                                <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                            </div>
+                            {% if session.user_name %}
+                            <span class="mr-3">{{ session.user_name }}</span>
+                            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-dark">Logout</a>
+                            {% else %}
+                            <a href="{{ url_for('auth.login', next=request.path) }}" class="harvard-menu-login mr-3">Log in</a>
+                            <a href="#" class="btn btn-sm harvard-donate-btn">Donate</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Main Navigation -->
-        <div class="harvard-header-nav">
-            <div class="container">
-                <nav class="harvard-main-nav">
-                    <ul class="nav justify-content-center flex-wrap">
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">The Magazine</a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">Current Issue</a>
-                                <a class="dropdown-item" href="{{ url_for('archive', month_key=months[1]) if months|length > 1 else '#' }}">Past Issues</a>
-                            </div>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Topics</a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="#">Arts &amp; Culture</a>
-                                <a class="dropdown-item" href="#">Commentary</a>
-                                <a class="dropdown-item" href="#">Faculty</a>
-                                <a class="dropdown-item" href="#">Health &amp; Medicine</a>
-                                <a class="dropdown-item" href="#">Science</a>
-                                <a class="dropdown-item" href="#">Technology</a>
-                                <a class="dropdown-item" href="#">University News</a>
-                            </div>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Series</a>
-                            <div class="dropdown-menu">
-                                {% for s in nav_series %}
-                                <a class="dropdown-item" href="{{ url_for('series_detail', slug=s.slug) }}">{{ s.name }}</a>
-                                {% else %}
-                                <span class="dropdown-item text-muted">No series yet</span>
-                                {% endfor %}
-                            </div>
-                        </li>
-                        <li class="nav-item"><a href="{{ url_for('index') }}#podcast" class="nav-link">Podcast</a></li>
-                        <li class="nav-item"><a href="{{ url_for('index') }}#videos" class="nav-link">Videos</a></li>
+            <!-- Vertical nav list -->
+            <nav class="harvard-menu-overlay-nav">
+                <div class="container">
+                    <ul class="harvard-menu-overlay-list">
+                        <li><a href="{{ url_for('index') }}" class="harvard-menu-item-active">Home</a></li>
+                        <li><a href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">The Magazine <i class="fas fa-chevron-right ml-2"></i></a></li>
+                        <li><a href="#">Classifieds <i class="fas fa-chevron-right ml-2"></i></a></li>
+                        <li><a href="#">Class Notes &amp; Obituaries <i class="fas fa-chevron-right ml-2"></i></a></li>
+                        <li><a href="{{ url_for('index') }}#podcast">Podcast</a></li>
+                        <li><a href="#">Series <i class="fas fa-chevron-right ml-2"></i></a></li>
+                        <li><a href="#">Topics <i class="fas fa-chevron-right ml-2"></i></a></li>
+                        <li><a href="{{ url_for('index') }}#videos">Videos</a></li>
+                        <li><a href="#">Donate</a></li>
+                        <li><a href="#">Advertise <i class="fas fa-chevron-right ml-2"></i></a></li>
                         {% if months|length >= 1 %}
-                        <li class="nav-item"><a href="{{ url_for('archive', month_key=months[0]) }}" class="nav-link">{{ months[0]|format_month }}</a></li>
+                        <li><a href="{{ url_for('archive', month_key=months[0]) }}">{{ months[0]|format_month }}</a></li>
                         {% endif %}
                         {% if months|length >= 2 %}
-                        <li class="nav-item"><a href="{{ url_for('archive', month_key=months[1]) }}" class="nav-link">{{ months[1]|format_month }}</a></li>
+                        <li><a href="{{ url_for('archive', month_key=months[1]) }}">{{ months[1]|format_month }}</a></li>
                         {% endif %}
                     </ul>
-                </nav>
-            </div>
+                </div>
+            </nav>
         </div>
-    </header>
+    </div>
     
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -202,11 +224,120 @@
         {% block content %}{% endblock %}
     </main>
     
-    <!-- Footer -->
-    <footer class="pt-50 pb-20 bg-grey">
+    <!-- Footer - Dark Harvard Magazine style (black bg, white text, columns + Current Issue + lower bar) -->
+    <footer class="harvard-footer-dark pt-50 pb-0">
         <div class="container">
-            <div class="footer-copy-right pt-30 mt-20 wow fadeInUp animated">
-                <p class="float-md-left font-small text-muted">© {{ now.year }}, <span class="footer-HORIZON">HORIZON</span> | All rights reserved</p>
+            <!-- Upper section: link columns + Current Issue -->
+            <div class="row footer-dark-row pb-4">
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Contact</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Staff</a></li>
+                        <li><a href="#">Submit a Class Note</a></li>
+                        <li><a href="#">Submit an Obituary</a></li>
+                        <li><a href="#">Submit a Letter to the Editor</a></li>
+                        <li><a href="#">Apply for a Fellowship</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Customer Service</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Address Change</a></li>
+                        <li><a href="#">Reprint | Permissions</a></li>
+                        <li><a href="#">Donor Services</a></li>
+                        <li><a href="#">Print Magazine Questions</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">About</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Map and Directions</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Support Kumaraguru Magazine</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Behind the Scenes</a></li>
+                        <li><a href="#">How We Are Funded</a></li>
+                        <li><a href="#">Special Gifts</a></li>
+                        <li><a href="#">Ways to Support the Magazine</a></li>
+                        <li><a href="#">Why We Need Your Support</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Newsletters</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Newsletters</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Advertise</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">Advertise</a></li>
+                        <li><a href="#">Classifieds</a></li>
+                        <li><a href="#">Ad Sizes | Specifications</a></li>
+                        <li><a href="#">Deadlines</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Videos</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="{{ url_for('videos_list') }}">Videos</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">Kumaraguru Magazine App</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">App</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2 mb-4">
+                    <h5 class="footer-dark-heading">FAQ</h5>
+                    <ul class="footer-dark-links list-unstyled">
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
+                </div>
+                <!-- Current Issue column (rightmost) -->
+                <div class="col-12 col-lg-2 mb-4 footer-current-issue">
+                    <h5 class="footer-dark-heading">Current Issue</h5>
+                    <a href="{{ url_for('archive', month_key=months[0]) if months else '#' }}" class="footer-cover-link d-block mb-3">
+                        <div class="footer-cover-placeholder">
+                            <span class="footer-cover-logo">KUMARAGURU</span>
+                            <span class="footer-cover-logo-sub">MAGAZINE</span>
+                            {% if months %}
+                            <span class="footer-cover-date">{{ months[0]|format_month }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    <div class="footer-social-outline d-flex gap-3 justify-content-center justify-content-lg-start">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Lower section: thin white line, logo left, copyright right -->
+            <div class="footer-dark-bottom pt-4 pb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div class="footer-dark-logo-text mb-2 mb-md-0">
+                        <span class="footer-dark-logo-main">KUMARAGURU</span>
+                        <span class="footer-dark-logo-sub">MAGAZINE</span>
+                    </div>
+                    <div class="footer-dark-copy text-right">
+                        <p class="mb-1">All Content © 1996-{{ now.year }} Kumaraguru Magazine Inc.</p>
+                        <p class="mb-1">All right reserved</p>
+                        <nav class="footer-dark-policy">
+                            <a href="#">Privacy Policy</a>
+                            <span class="mx-2">|</span>
+                            <a href="#">Digital Accessibility Policy</a>
+                            <span class="mx-2">|</span>
+                            <a href="#">Report Copyright Infringement</a>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
@@ -228,7 +359,44 @@
     <script src="{{ url_for('static', filename='js/vendor/waypoints.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/vendor/jquery.theia.sticky.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var menuBtn = document.getElementById('harvard-menu-toggle');
+            var menuClose = document.getElementById('harvard-menu-close');
+            var overlay = document.getElementById('harvard-menu-overlay');
+            var nav = document.querySelector('.harvard-header-nav');
+            function openMenu() {
+                if (overlay) {
+                    overlay.classList.add('harvard-menu-overlay-open');
+                    overlay.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            function closeMenu() {
+                if (overlay) {
+                    overlay.classList.remove('harvard-menu-overlay-open');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }
+            }
+            if (menuBtn && overlay) {
+                menuBtn.addEventListener('click', openMenu);
+            }
+            if (menuClose && overlay) {
+                menuClose.addEventListener('click', closeMenu);
+            }
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeMenu();
+                });
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay && overlay.classList.contains('harvard-menu-overlay-open')) {
+                    closeMenu();
+                }
+            });
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
