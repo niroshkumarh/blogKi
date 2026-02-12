@@ -28,12 +28,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
     
+    <!-- Font Awesome (icons for share bar, social, etc.) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
     <!-- Harvard Magazine Theme -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/harvard-layout.css') }}">
     
-    <!-- HORIZON Branding Styles -->
+    <!-- HORIZON Branding Styles + Responsive base -->
     <style>
+        /* Smooth scroll for anchor links (e.g. #podcast, #videos) */
+        html { scroll-behavior: smooth; }
+        /* Site-wide responsive: prevent horizontal scroll, fluid media */
+        body { overflow-x: hidden; }
+        img { max-width: 100%; height: auto; }
+        video, iframe { max-width: 100%; }
+        @media (max-width: 767px) {
+            .harvard-main-nav .nav-link { padding: 10px 12px; font-size: 13px; }
+        }
         /* Apply Anek Bold to all HORIZON branding */
         .HORIZON-brand,
         .logo-text,
@@ -56,9 +67,12 @@
 <body>
     <div class="scroll-progress primary-bg"></div>
     
-    <!-- Preloader -->
-    <div class="preloader text-center">
-        <div class="circle"></div>
+    <!-- Preloader - Harvard style -->
+    <div class="preloader harvard-preloader">
+        <div class="harvard-preloader-inner">
+            <div class="harvard-preloader-spinner"></div>
+            <p class="harvard-preloader-text">HORIZON</p>
+        </div>
     </div>
     
     <!-- Offcanvas sidebar -->
@@ -113,9 +127,9 @@
         <div class="harvard-header-branding text-center py-4">
             <div class="container">
                 <a href="{{ url_for('index') }}">
-                    <img src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON" class="harvard-logo mb-2">
+                    <img src="{{ url_for('static', filename='imgs/theme/logo.png') }}" alt="HORIZON" class="harvard-logo mb-2"><br>
+                    Horizon Kumaraguru
                 </a>
-                <div class="harvard-tagline">Your <em>independent</em> source for news since 1898</div>
             </div>
         </div>
 
@@ -146,13 +160,15 @@
                         <li class="nav-item dropdown">
                             <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Series</a>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" href="#">Five Questions</a>
-                                <a class="dropdown-item" href="#">In the Headlines</a>
-                                <a class="dropdown-item" href="#">Featured Series</a>
+                                {% for s in nav_series %}
+                                <a class="dropdown-item" href="{{ url_for('series_detail', slug=s.slug) }}">{{ s.name }}</a>
+                                {% else %}
+                                <span class="dropdown-item text-muted">No series yet</span>
+                                {% endfor %}
                             </div>
                         </li>
-                        <li class="nav-item"><a href="#" class="nav-link">Podcast</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link">Videos</a></li>
+                        <li class="nav-item"><a href="{{ url_for('index') }}#podcast" class="nav-link">Podcast</a></li>
+                        <li class="nav-item"><a href="{{ url_for('index') }}#videos" class="nav-link">Videos</a></li>
                         {% if months|length >= 1 %}
                         <li class="nav-item"><a href="{{ url_for('archive', month_key=months[0]) }}" class="nav-link">{{ months[0]|format_month }}</a></li>
                         {% endif %}

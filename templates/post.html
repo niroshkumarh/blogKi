@@ -404,6 +404,61 @@
             padding: 4px 8px;
         }
     }
+    
+    /* ========================================
+       HARVARD-STYLE SHARE BAR – top of article (horizontal)
+       ======================================== */
+    .harvard-share-bar-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0 20px 0;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+    .harvard-share-label {
+        font-family: 'Commissioner', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .harvard-share-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .harvard-share-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        color: #333 !important;
+        text-decoration: none !important;
+        font-size: 18px;
+        transition: color 0.2s ease, background 0.2s ease;
+        border-radius: 4px;
+    }
+    .harvard-share-link:hover {
+        color: #c41230 !important;
+        background: #f9f9f9;
+    }
+    .harvard-share-link i {
+        font-size: 1.1rem;
+    }
+    @media (max-width: 767px) {
+        .harvard-share-bar-top {
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 0 16px 0;
+        }
+        .harvard-share-link {
+            width: 44px;
+            height: 44px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -411,6 +466,18 @@
 <!-- Start Main content -->
 <main class="bg-grey pb-30">
     <div class="container single-content">
+        <div class="single-content-inner">
+        <!-- Share bar: horizontal at top of article (Harvard style) -->
+        <div class="harvard-share-bar-top">
+            <span class="harvard-share-label">Share</span>
+            <nav class="harvard-share-links" aria-label="Share article">
+                <a href="#" onclick="window.print(); return false;" class="harvard-share-link" title="Print" aria-label="Print"><i class="fas fa-print" aria-hidden="true"></i></a>
+                <a href="mailto:?subject={{ share_title }}&body={{ share_url }}" class="harvard-share-link" title="Email" aria-label="Email"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+                <a href="https://twitter.com/intent/tweet?url={{ share_url }}&text={{ share_title }}" target="_blank" rel="noopener noreferrer" class="harvard-share-link" title="Share on X" aria-label="Share on X"><i class="fab fa-x-twitter" aria-hidden="true"></i></a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url }}" target="_blank" rel="noopener noreferrer" class="harvard-share-link" title="Share on Facebook" aria-label="Share on Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+            </nav>
+        </div>
+
         <div class="entry-header entry-header-style-1 mb-50 pt-50">
             <h1 class="entry-title mb-50 font-weight-900">
                 {{ post.title }}
@@ -544,6 +611,7 @@
         </div>
         {% endif %}
         <!--end related posts-->
+        </div>
     </div>
 </main>
 <!-- End Main content -->

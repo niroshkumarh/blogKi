@@ -2,7 +2,7 @@
 Admin module - Dashboard and post editor
 """
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from werkzeug.utils import secure_filename
 from models import db, Post, User, Comment, Like, ReadEvent, AudioEpisode, Series, Video, Podcast
 from auth import admin_required
