@@ -91,32 +91,6 @@
             </div>
         </div>
 
-        <!-- EXPLORE MORE FROM CURRENT ISSUE -->
-        {% if latest_posts|length >= 3 %}
-        <div class="explore-more-section mt-40 mb-40">
-            <h5 class="section-heading text-center mb-30">EXPLORE MORE FROM CURRENT ISSUE</h5>
-            <div class="row">
-                {% for post in latest_posts[6:9] %}
-                <div class="col-lg-4 col-md-6 mb-30">
-                    <article class="explore-card">
-                        {% if post.hero_image_path %}
-                        <div class="explore-card-thumb mb-15">
-                            <a href="{{ url_for('post_detail', slug=post.slug) }}">
-                                <img src="{{ post.hero_image_path }}" alt="{{ post.title }}" class="img-fluid">
-                            </a>
-                        </div>
-                        {% endif %}
-                        <div class="explore-card-category mb-5">{{ post.category or 'ARTICLE' }}</div>
-                        <h4 class="explore-card-title">
-                            <a href="{{ url_for('post_detail', slug=post.slug) }}">{{ post.title }}</a>
-                        </h4>
-                    </article>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
         <!-- THE MAGAZINE + AUDIO / IN THE HEADLINES (side by side) -->
         <div class="row mt-40">
             <!-- THE MAGAZINE -->

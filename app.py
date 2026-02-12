@@ -207,8 +207,32 @@ def post_detail(slug):
     share_url = quote(request.url, safe='')
     share_title = quote(post.title, safe='')
 
+    # You might also like: use related posts if any, else latest published (excluding current)
+    also_like_posts = post.get_related_posts()
+    if not also_like_posts:
+        also_like_posts = Post.query.filter(
+            Post.status == 'published',
+            Post.id != post.id
+        ).order_by(Post.published_at.desc()).limit(4).all()
+
+    # Explore More From Current Issue: other posts from same issue (month_key), excluding this post
+    explore_current_issue_posts = []
+    if post.month_key:
+        explore_current_issue_posts = (
+            Post.query.filter(
+                Post.month_key == post.month_key,
+                Post.status == 'published',
+                Post.id != post.id
+            )
+            .order_by(Post.published_at.desc())
+            .limit(3)
+            .all()
+        )
+
     return render_template('post.html', post=post, comments=comments, like_count=like_count,
-                          user_liked=user_liked, share_url=share_url, share_title=share_title)
+                          user_liked=user_liked, share_url=share_url, share_title=share_title,
+                          also_like_posts=also_like_posts,
+                          explore_current_issue_posts=explore_current_issue_posts)
 
 
 @app.template_filter('format_month')

@@ -69,6 +69,15 @@ h1, h2, h3, h4, h5, h6 {
     color: #c41230;
 }
 
+/* Sticky navbar wrapper: top bar + header stay at top on scroll */
+.harvard-navbar-sticky-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 1008;
+    background: #fff;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
 /* HARVARD HEADER - Single bar (Menu | Tagline + Logo | Socials + Log in + Donate) */
 .harvard-header {
     background: #fff;
@@ -337,6 +346,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .harvard-menu-login:hover {
+    color: #c41230;
+}
+
+/* Log in / Admin link in main navbar (same style as overlay) */
+.harvard-nav-login {
+    font-family: 'Commissioner', Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    text-decoration: none;
+}
+
+.harvard-nav-login:hover {
     color: #c41230;
 }
 

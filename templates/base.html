@@ -93,16 +93,9 @@
         </div>
     </aside>
     
-    <!-- Top bar (Harvard style: white, SUBSCRIBE left, DONATE right) -->
-    <div class="harvard-top-bar-white">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center py-2">
-                <a href="#" class="harvard-top-subscribe">SUBSCRIBE</a>
-                <a href="#" class="btn btn-sm harvard-donate-btn">DONATE</a>
-            </div>
-        </div>
-    </div>
-    <!-- Header (Menu + Latest News | Logo only | Socials + CART) -->
+    <!-- Sticky navbar wrapper (header only) -->
+    <div class="harvard-navbar-sticky-wrapper">
+    <!-- Header (Menu + Latest News | Logo only | Socials) -->
     <header class="harvard-header">
         <div class="harvard-header-single-bar">
             <div class="container">
@@ -124,22 +117,28 @@
                             </div>
                         </a>
                     </div>
-                    <!-- Right: Socials + CART (Log in/Admin in menu overlay only) -->
+                    <!-- Right: Socials + Log in + Donate (Harvard style; Admin when logged in) -->
                     <div class="harvard-top-right d-flex align-items-center">
-                        <div class="harvard-social-icons mr-4">
+                        <div class="harvard-social-icons mr-3 mr-md-4">
                             <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                             <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
                             <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                            <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                             <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                         </div>
-                        <a href="#" class="harvard-cart-link" aria-label="Cart"><i class="fas fa-shopping-cart"></i> Cart</a>
+                        {% if session.user_name %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="harvard-nav-login mr-2 mr-md-3">Admin</a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm harvard-donate-btn">Logout</a>
+                        {% else %}
+                        <a href="{{ url_for('auth.login', next=request.path) }}" class="harvard-nav-login mr-2 mr-md-3">Log in</a>
+                        <a href="#" class="btn btn-sm harvard-donate-btn">Donate</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
         <div class="harvard-header-divider"></div>
     </header>
+    </div>
 
     <!-- Full-screen menu overlay (Harvard Magazine style: Close | Logo | Socials + Log in + Donate, then vertical nav list) -->
     <div id="harvard-menu-overlay" class="harvard-menu-overlay" aria-hidden="true">
@@ -163,7 +162,6 @@
                                 <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                                 <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
                                 <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                                 <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                             </div>
                             {% if session.user_name %}
@@ -183,14 +181,8 @@
                     <ul class="harvard-menu-overlay-list">
                         <li><a href="{{ url_for('index') }}" class="harvard-menu-item-active">Home</a></li>
                         <li><a href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">The Magazine <i class="fas fa-chevron-right ml-2"></i></a></li>
-                        <li><a href="#">Classifieds <i class="fas fa-chevron-right ml-2"></i></a></li>
-                        <li><a href="#">Class Notes &amp; Obituaries <i class="fas fa-chevron-right ml-2"></i></a></li>
                         <li><a href="{{ url_for('index') }}#podcast">Podcast</a></li>
-                        <li><a href="#">Series <i class="fas fa-chevron-right ml-2"></i></a></li>
-                        <li><a href="#">Topics <i class="fas fa-chevron-right ml-2"></i></a></li>
                         <li><a href="{{ url_for('index') }}#videos">Videos</a></li>
-                        <li><a href="#">Donate</a></li>
-                        <li><a href="#">Advertise <i class="fas fa-chevron-right ml-2"></i></a></li>
                         {% if months|length >= 1 %}
                         <li><a href="{{ url_for('archive', month_key=months[0]) }}">{{ months[0]|format_month }}</a></li>
                         {% endif %}
@@ -314,7 +306,6 @@
                         <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
                         <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                         <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
@@ -395,6 +386,16 @@
                     closeMenu();
                 }
             });
+            // Close menu when any overlay nav link is clicked (fixes home page: anchor links don't reload, so menu stayed open)
+            var overlayNav = document.querySelector('.harvard-menu-overlay-nav');
+            if (overlayNav && overlay) {
+                overlayNav.addEventListener('click', function(e) {
+                    var link = e.target.closest('a');
+                    if (link && link.href) {
+                        closeMenu();
+                    }
+                });
+            }
         });
     </script>
     {% block extra_js %}{% endblock %}
