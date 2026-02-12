@@ -406,71 +406,273 @@
     }
     
     /* ========================================
-       HARVARD-STYLE SHARE BAR – top of article (horizontal)
+       VERTICAL STICKY SHARE BAR (Harvard Magazine style – left side)
        ======================================== */
-    .harvard-share-bar-top {
+    .harvard-share-bar-vertical {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 0 20px 0;
-        border-bottom: 1px solid #eee;
-        margin-bottom: 20px;
-    }
-    .harvard-share-label {
-        font-family: 'Commissioner', sans-serif;
-        font-size: 13px;
-        font-weight: 600;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .harvard-share-links {
-        display: flex;
+        flex-direction: column;
         align-items: center;
         gap: 4px;
+        padding: 24px 0 8px 0;
+        position: sticky;
+        top: 120px;
     }
-    .harvard-share-link {
+    .harvard-share-bar-vertical .harvard-share-link {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         color: #333 !important;
         text-decoration: none !important;
         font-size: 18px;
         transition: color 0.2s ease, background 0.2s ease;
         border-radius: 4px;
     }
-    .harvard-share-link:hover {
+    .harvard-share-bar-vertical .harvard-share-link:hover {
         color: #c41230 !important;
-        background: #f9f9f9;
+        background: #f5f5f5;
     }
-    .harvard-share-link i {
+    .harvard-share-bar-vertical .harvard-share-link i {
         font-size: 1.1rem;
     }
-    @media (max-width: 767px) {
-        .harvard-share-bar-top {
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 10px 0 16px 0;
+    @media (max-width: 991px) {
+        .harvard-share-bar-vertical {
+            flex-direction: row;
+            position: static;
+            justify-content: flex-start;
+            padding: 12px 0 20px 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #eee;
         }
-        .harvard-share-link {
-            width: 44px;
-            height: 44px;
+    }
+
+    /* ========================================
+       POST PAGE: UNIFIED WHITE BACKGROUND (no color differentiation)
+       ======================================== */
+    .harvard-post-page {
+        background: #fff !important;
+        padding-bottom: 60px;
+    }
+
+    /* ========================================
+       HARVARD MAGAZINE ARTICLE LAYOUT (with share bar + sidebar)
+       ======================================== */
+    .harvard-post-layout {
+        display: flex;
+        gap: 0;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 15px 60px;
+        background: #fff;
+    }
+    .harvard-post-share-col {
+        flex: 0 0 56px;
+        padding-right: 16px;
+        padding-top: 16px;
+    }
+    .harvard-post-main-col {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 720px;
+    }
+    .harvard-post-sidebar-col {
+        flex: 0 0 300px;
+        padding-left: 40px;
+        border-left: 1px solid #eee;
+    }
+    @media (max-width: 991px) {
+        .harvard-post-layout {
+            flex-wrap: wrap;
+        }
+        .harvard-post-share-col {
+            flex: 0 0 100%;
+            width: 100%;
+            padding-right: 0;
+        }
+        .harvard-post-sidebar-col {
+            flex: 0 0 100%;
+            width: 100%;
+            padding-left: 0;
+            padding-top: 32px;
+            margin-top: 32px;
+            border-left: none;
+            border-top: 1px solid #eee;
+        }
+    }
+    .harvard-article {
+        padding: 0 0 40px 0;
+        background: #fff;
+    }
+    .harvard-article-section-line {
+        font-family: 'Commissioner', Arial, sans-serif;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+    .harvard-article-section-line a {
+        color: #c41230;
+        text-decoration: none;
+    }
+    .harvard-article-section-line a:hover {
+        text-decoration: underline;
+    }
+    .harvard-article-section-line .harvard-article-date {
+        color: #666;
+    }
+    .harvard-article h1.harvard-article-title {
+        font-family: 'Commissioner', Arial, sans-serif;
+        font-size: 2.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #000;
+        margin-bottom: 12px;
+    }
+    .harvard-article-deck {
+        font-size: 1.25rem;
+        font-weight: 500;
+        line-height: 1.45;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    .harvard-article-byline {
+        font-size: 15px;
+        color: #555;
+        margin-bottom: 28px;
+    }
+    .harvard-article-byline a {
+        color: #c41230;
+        text-decoration: none;
+    }
+    .harvard-article-byline a:hover {
+        text-decoration: underline;
+    }
+    .harvard-article-figure {
+        margin: 0 0 28px 0;
+        text-align: center;
+    }
+    .harvard-article-figure img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    .harvard-article-figcaption {
+        font-size: 13px;
+        color: #666;
+        font-style: italic;
+        margin-top: 10px;
+        line-height: 1.5;
+    }
+    .harvard-article-body {
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 18px;
+        line-height: 1.75;
+        color: #222;
+    }
+    .harvard-article-body p {
+        margin-bottom: 1.25em;
+    }
+    .harvard-article-body a {
+        color: #c41230;
+        text-decoration: none;
+    }
+    .harvard-article-body a:hover {
+        text-decoration: underline;
+    }
+    .harvard-read-more {
+        font-size: 15px;
+        margin-top: 32px;
+        margin-bottom: 24px;
+    }
+    .harvard-read-more a {
+        color: #c41230;
+        text-decoration: none;
+    }
+    .harvard-read-more a:hover {
+        text-decoration: underline;
+    }
+    .harvard-related-topics {
+        margin-bottom: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #eee;
+    }
+    .harvard-related-topics-label {
+        font-family: 'Commissioner', Arial, sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    .harvard-related-topics-links a {
+        color: #c41230;
+        text-decoration: none;
+        margin-right: 12px;
+    }
+    .harvard-related-topics-links a:hover {
+        text-decoration: underline;
+    }
+    /* YOU MIGHT ALSO LIKE – Harvard Magazine style (red title, line above, thumb + title + description) */
+    .harvard-you-might-also-like {
+        margin-top: 0;
+        padding-top: 0;
+    }
+    .harvard-you-might-also-like-title {
+        font-family: 'Commissioner', Arial, sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #c41230;
+        text-transform: uppercase;
+        margin: 0 0 20px 0;
+        padding-top: 24px;
+        border-top: 1px solid #e0e0e0;
+    }
+    .harvard-also-like-card {
+        margin-bottom: 24px;
+    }
+    .harvard-also-like-card a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .harvard-also-like-card a:hover .harvard-also-like-title {
+        color: #c41230;
+    }
+    .harvard-also-like-card img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+        margin-bottom: 10px;
+    }
+    .harvard-also-like-title {
+        font-family: 'Commissioner', Arial, sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.35;
+        color: #000;
+        margin-bottom: 6px;
+    }
+    .harvard-also-like-desc {
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #555;
+    }
+    @media (min-width: 768px) {
+        .harvard-article h1.harvard-article-title {
+            font-size: 2.75rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Start Main content -->
-<main class="bg-grey pb-30">
-    <div class="container single-content">
-        <div class="single-content-inner">
-        <!-- Share bar: horizontal at top of article (Harvard style) -->
-        <div class="harvard-share-bar-top">
-            <span class="harvard-share-label">Share</span>
-            <nav class="harvard-share-links" aria-label="Share article">
+<!-- Post page: unified white background, vertical share bar, You might also like sidebar -->
+<main class="harvard-post-page">
+    <div class="harvard-post-layout">
+        <!-- Left: vertical sticky share bar (Harvard style) -->
+        <div class="harvard-post-share-col">
+            <nav class="harvard-share-bar-vertical" aria-label="Share article">
                 <a href="#" onclick="window.print(); return false;" class="harvard-share-link" title="Print" aria-label="Print"><i class="fas fa-print" aria-hidden="true"></i></a>
                 <a href="mailto:?subject={{ share_title }}&body={{ share_url }}" class="harvard-share-link" title="Email" aria-label="Email"><i class="fas fa-envelope" aria-hidden="true"></i></a>
                 <a href="https://twitter.com/intent/tweet?url={{ share_url }}&text={{ share_title }}" target="_blank" rel="noopener noreferrer" class="harvard-share-link" title="Share on X" aria-label="Share on X"><i class="fab fa-x-twitter" aria-hidden="true"></i></a>
@@ -478,140 +680,134 @@
             </nav>
         </div>
 
-        <div class="entry-header entry-header-style-1 mb-50 pt-50">
-            <h1 class="entry-title mb-50 font-weight-900">
-                {{ post.title }}
-            </h1>
-            <h4 class="mb-30 font-weight-500 text-muted">{{ post.excerpt or 'Kumaraguru Magazine' }}</h4>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="entry-meta align-items-center meta-2 font-small color-muted">
-                        <span class="mr-10"> {{ post.published_at.strftime('%B %d, %Y %I:%M %p') if post.published_at else 'Draft' }}</span>
-                        {% if post.read_time %}
-                        <span class="has-dot"> {{ post.read_time }} mins read</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-md-6 text-right d-none d-md-inline">
-                    <!-- Likes & Comments Count -->
-                    <div class="d-inline-block mr-15">
-                        <span class="text-muted mr-10">
-                            <i class="elegant-icon icon_heart_alt mr-5"></i>
-                            <span id="like-count">{{ post.get_like_count() }}</span> likes
-                        </span>
-                        <span class="text-muted">
-                            <i class="elegant-icon icon_comment_alt mr-5"></i>
-                            <span id="comment-count">{{ post.get_comment_count() }}</span> comments
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--end single header-->
-        
-        {% if post.hero_image_path %}
-        <figure class="image mb-30 m-auto text-center border-radius-10">
-            <img class="border-radius-10" src="{{ post.hero_image_path }}" alt="{{ post.title }}">
-        </figure>
-        {% endif %}
-        
-        <!--figure-->
-        <article class="entry-wraper mb-50">
-            <div class="entry-main-content dropcap wow fadeIn animated">
-                {{ post.html_content|safe }}
-            </div>
-            
-            <!-- Like Button -->
-            <div class="entry-bottom mt-50 mb-30 wow fadeIn animated">
-                <div class="tags">
-                    {% if user_liked %}
-                    <button id="like-btn" class="btn btn-sm btn-danger mr-10" onclick="toggleLike()">
-                        <i class="elegant-icon icon_heart"></i> Unlike
-                    </button>
-                    {% else %}
-                    <button id="like-btn" class="btn btn-sm btn-outline-danger mr-10" onclick="toggleLike()">
-                        <i class="elegant-icon icon_heart_alt"></i> Like
-                    </button>
+        <!-- Center: article content -->
+        <div class="harvard-post-main-col">
+            <article class="harvard-article">
+                <p class="harvard-article-section-line">
+                    {% if post.category %}
+                    <a href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">{{ post.category }}</a>
                     {% endif %}
-                    <span class="font-small text-muted ml-10">
-                        <span id="like-count-bottom">{{ post.get_like_count() }}</span> people liked this
-                    </span>
-                </div>
-            </div>
-        </article>
-        
-        <!--Comments area-->
-        <div class="comments-area">
-            <div class="widget-header-2 position-relative mb-30">
-                <h5 class="mt-5 mb-30">💬 Comments (<span id="comment-count-header">{{ post.get_comment_count() }}</span>)</h5>
-                <div class="bt-1 border-color-1"></div>
-            </div>
-            
-            <!-- Comment Form -->
-            <div class="comment-form wow fadeIn animated mb-40">
-                <h6 class="mb-20">Leave a Comment</h6>
-                <form id="comment-form" onsubmit="submitComment(event)">
-                    <div class="form-group">
-                        <textarea class="form-control w-100" name="comment" id="comment-content" cols="30" rows="4" 
-                                  placeholder="Share your thoughts..." required 
-                                  style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px; font-size: 14px;"></textarea>
-                    </div>
-                    <div class="form-group text-right">
-                        <button type="submit" class="btn btn-radius bg-primary text-white px-4 py-2">
-                            <i class="elegant-icon icon_comment_alt mr-1"></i> Post Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Comments List (will be populated by JavaScript) -->
-            <div class="comment-list" id="comments-list">
-                <p class="text-center text-muted">
-                    <i class="fas fa-spinner fa-spin"></i> Loading comments...
+                    {% if post.category and post.published_at %}<span class="harvard-article-date"> | </span>{% endif %}
+                    <span class="harvard-article-date">{{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}</span>
                 </p>
-            </div>
-        </div>
-        <!--end comments area-->
-        
-        <!-- Related Posts Section -->
-        {% set related_posts = post.get_related_posts() %}
-        {% if related_posts|length > 0 %}
-        <div class="related-posts mt-50">
-            <div class="widget-header-2 position-relative mb-30">
-                <h5 class="mt-5 mb-30">Related Posts</h5>
-                <div class="bt-1 border-color-1"></div>
-            </div>
-            <div class="row">
-                {% for related in related_posts %}
-                <article class="col-lg-4 col-md-6 mb-30 wow fadeInUp animated">
-                    <div class="post-card-1 border-radius-10 hover-up">
-                        <div class="post-thumb thumb-overlay img-hover-slide position-relative" style="background-image: url({{ related.hero_image_path or url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }})">
-                            <a class="img-link" href="{{ url_for('post_detail', slug=related.slug) }}"></a>
-                        </div>
-                        <div class="post-content p-30">
-                            <div class="entry-meta meta-0 font-small mb-10">
-                                <span class="post-cat text-success">{{ related.category or 'Article' }}</span>
-                            </div>
-                            <div class="d-flex post-card-content">
-                                <h6 class="post-title mb-20 font-weight-900">
-                                    <a href="{{ url_for('post_detail', slug=related.slug) }}">{{ related.title }}</a>
-                                </h6>
-                                <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
-                                    <span class="post-on">{{ related.published_at.strftime('%B %d, %Y') if related.published_at }}</span>
-                                    {% if related.read_time %}
-                                    <span class="time-reading has-dot">{{ related.read_time }} mins read</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+
+                <h1 class="harvard-article-title">{{ post.title }}</h1>
+                {% if post.excerpt %}
+                <p class="harvard-article-deck">{{ post.excerpt }}</p>
+                {% endif %}
+                <p class="harvard-article-byline">by <a href="{{ url_for('index') }}">Kumaraguru Magazine</a></p>
+
+                {% if post.hero_image_path %}
+                <figure class="harvard-article-figure">
+                    <img src="{{ post.hero_image_path }}" alt="{{ post.title }}">
+                    <figcaption class="harvard-article-figcaption">{{ post.title }}</figcaption>
+                </figure>
+                {% endif %}
+
+                <div class="harvard-article-body entry-main-content dropcap">
+                    {{ post.html_content|safe }}
+                </div>
+
+                <div class="entry-meta font-small color-muted mb-20">
+                    {% if post.read_time %}<span class="mr-10">{{ post.read_time }} min read</span>{% endif %}
+                    <span class="mr-10"><i class="elegant-icon icon_heart_alt mr-5"></i><span id="like-count">{{ post.get_like_count() }}</span> likes</span>
+                    <span><i class="elegant-icon icon_comment_alt mr-5"></i><span id="comment-count">{{ post.get_comment_count() }}</span> comments</span>
+                </div>
+
+                <div class="entry-bottom mb-40">
+                    {% if user_liked %}
+                    <button id="like-btn" class="btn btn-sm btn-danger mr-10" onclick="toggleLike()"><i class="elegant-icon icon_heart"></i> Unlike</button>
+                    {% else %}
+                    <button id="like-btn" class="btn btn-sm btn-outline-danger mr-10" onclick="toggleLike()"><i class="elegant-icon icon_heart_alt"></i> Like</button>
+                    {% endif %}
+                    <span class="font-small text-muted"><span id="like-count-bottom">{{ post.get_like_count() }}</span> people liked this</span>
+                </div>
+
+                <p class="harvard-read-more">Read more from <a href="{{ url_for('index') }}">Kumaraguru Magazine</a></p>
+                <div class="harvard-related-topics">
+                    <div class="harvard-related-topics-label">Related topics</div>
+                    <div class="harvard-related-topics-links">
+                        {% if post.category %}<a href="{{ url_for('archive', month_key=months[0]) if months else '#' }}">{{ post.category }}</a>{% endif %}
+                        <a href="{{ url_for('index') }}">The Magazine</a>
                     </div>
-                </article>
+                </div>
+
+                <div class="comments-area pt-30">
+                    <h2 class="mb-20" style="font-size:1.25rem;">Comments (<span id="comment-count-header">{{ post.get_comment_count() }}</span>)</h2>
+                    <div class="comment-form mb-40">
+                        <h6 class="mb-15">Leave a Comment</h6>
+                        <form id="comment-form" onsubmit="submitComment(event)">
+                            <div class="form-group">
+                                <textarea class="form-control w-100" name="comment" id="comment-content" cols="30" rows="4" placeholder="Share your thoughts..." required style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px; font-size: 14px;"></textarea>
+                            </div>
+                            <div class="form-group text-right">
+                                <button type="submit" class="btn btn-radius bg-primary text-white px-4 py-2"><i class="elegant-icon icon_comment_alt mr-1"></i> Post Comment</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="comment-list" id="comments-list">
+                        <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading comments...</p>
+                    </div>
+                </div>
+
+                <!-- Explore More From Current Issue (below comments) -->
+                {% if explore_current_issue_posts|length > 0 %}
+                <div class="explore-more-section mt-40 mb-40">
+                    <h2 class="explore-more-heading">Explore More From Current Issue</h2>
+                    <div class="row">
+                        {% for other in explore_current_issue_posts %}
+                        <div class="col-lg-4 col-md-6 mb-30">
+                            <article class="explore-card">
+                                {% if other.hero_image_path %}
+                                <div class="explore-card-thumb mb-15">
+                                    <a href="{{ url_for('post_detail', slug=other.slug) }}">
+                                        <img src="{{ other.hero_image_path }}" alt="{{ other.title }}" class="img-fluid">
+                                    </a>
+                                </div>
+                                {% else %}
+                                <div class="explore-card-thumb explore-card-thumb-placeholder mb-15">
+                                    <a href="{{ url_for('post_detail', slug=other.slug) }}">
+                                        <span class="explore-card-placeholder-text">{{ other.title[:30] }}{% if other.title|length > 30 %}...{% endif %}</span>
+                                    </a>
+                                </div>
+                                {% endif %}
+                                <div class="explore-card-category mb-5">{{ (other.category or 'Article')|upper }}</div>
+                                <h4 class="explore-card-title mb-2">
+                                    <a href="{{ url_for('post_detail', slug=other.slug) }}">{{ other.title }}</a>
+                                </h4>
+                                {% if other.excerpt %}
+                                <p class="explore-card-desc">{{ other.excerpt }}</p>
+                                {% endif %}
+                            </article>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <!-- Right: You might also like (Harvard style – red title, thumb + title + description) -->
+        {% if also_like_posts|length > 0 %}
+        <aside class="harvard-post-sidebar-col">
+            <section class="harvard-you-might-also-like">
+                <h2 class="harvard-you-might-also-like-title">You might also like</h2>
+                {% for related in also_like_posts %}
+                <div class="harvard-also-like-card">
+                    <a href="{{ url_for('post_detail', slug=related.slug) }}">
+                        {% if related.hero_image_path %}
+                        <img src="{{ related.hero_image_path }}" alt="{{ related.title }}">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='imgs/news/thumb-' + (loop.index|string) + '.jpg') }}" alt="{{ related.title }}">
+                        {% endif %}
+                        <h3 class="harvard-also-like-title">{{ related.title }}</h3>
+                        <p class="harvard-also-like-desc">{{ related.excerpt or 'Read this article on Kumaraguru Magazine.' }}</p>
+                    </a>
+                </div>
                 {% endfor %}
-            </div>
-        </div>
+            </section>
+        </aside>
         {% endif %}
-        <!--end related posts-->
-        </div>
     </div>
 </main>
 <!-- End Main content -->
