@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Archives | HORIZON{% endblock %}
+
+{% block content %}
+<main>
+    <div class="archive-header pt-50 text-center">
+        <div class="container">
+            <h2 class="font-weight-900">Archives</h2>
+            <div class="breadcrumb justify-content-center">
+                <a href="{{ url_for('index') }}" rel="nofollow">Home</a>
+                <span></span> Archives
+            </div>
+            <div class="bt-1 border-color-1 mt-30 mb-50"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if months_data %}
+        <div class="row">
+            {% for md in months_data %}
+            <div class="col-lg-4 col-md-6 mb-30">
+                <div class="p-30 border-radius-10 hover-up" style="background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s;">
+                    <h5 class="post-title mb-10 font-weight-900">
+                        <a href="{{ url_for('archive', month_key=md.month_key) }}">
+                            {{ md.month_key|format_month }}
+                        </a>
+                    </h5>
+                    <span class="text-muted font-small">{{ md.post_count }} post{{ 's' if md.post_count != 1 }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <p>No archived months available.</p>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

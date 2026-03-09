@@ -4,7 +4,7 @@ Tenant-only blog with Entra ID authentication
 """
 import os
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.middleware.proxy_fix import ProxyFix
 # from flask_session import Session  # Not needed - using Flask's built-in session
@@ -63,7 +63,7 @@ db.init_app(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Import models after db init
-from models import User, Post, Comment, Like, ReadEvent
+from models import User, Post, Comment, Like, ReadEvent, MonthVisibility
 
 # Register blueprints
 from auth import auth_bp, login_required
@@ -75,27 +75,60 @@ app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 
 
+def get_visible_months():
+    """Get months visible to the current user based on their role.
+    Admin/PreRelease: all months with published posts.
+    Regular users: only months with visibility='public'.
+    Months with no MonthVisibility record default to 'prerelease' (hidden from public).
+    """
+    all_months = db.session.query(Post.month_key).filter_by(
+        status='published'
+    ).distinct().all()
+    all_month_keys = [m[0] for m in all_months]
+
+    is_admin = session.get('is_admin', False)
+    is_prerelease = session.get('is_prerelease', False)
+
+    if is_admin or is_prerelease:
+        return sorted(all_month_keys, reverse=True)
+
+    # Regular users: only public months
+    public_months = db.session.query(MonthVisibility.month_key).filter_by(
+        visibility='public'
+    ).all()
+    public_month_keys = set(m[0] for m in public_months)
+
+    visible = [mk for mk in all_month_keys if mk in public_month_keys]
+    return sorted(visible, reverse=True)
+
+
+@app.context_processor
+def inject_month_navigation():
+    """Inject navbar months and archive months into all templates"""
+    if 'user_id' not in session:
+        return {'nav_months': [], 'archive_months': [], 'months': []}
+
+    visible = get_visible_months()
+    return {
+        'nav_months': visible[:3],
+        'archive_months': visible[3:],
+        'months': visible,
+    }
+
+
 # Routes
 @app.route('/')
 @login_required
 def index():
-    """Redirect to latest month archive (based on month_key, not published date)"""
-    # FIRST PRIORITY: Find the latest month_key with published posts
-    latest_month = db.session.query(Post.month_key).filter_by(status='published').order_by(Post.month_key.desc()).first()
-    
-    if latest_month:
-        # Redirect to the latest month
-        return redirect(url_for('archive', month_key=latest_month[0]))
-    
-    # SECOND PRIORITY: If no posts exist at all, use current month
+    """Redirect to latest visible month archive"""
+    visible_months = get_visible_months()
+
+    if visible_months:
+        return redirect(url_for('archive', month_key=visible_months[0]))
+
+    # No visible months — show empty archive with current month
     current_month = datetime.now().strftime('%Y-%m')
-    
-    # Get all months for sidebar
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
-    # Show empty archive with current month
-    return render_template('archive.html', posts=[], month_key=current_month, months=months)
+    return render_template('archive.html', posts=[], month_key=current_month)
 
 
 @app.route('/test')
@@ -124,16 +157,17 @@ def uploaded_file(filename):
 @login_required
 def archive(month_key):
     """Show posts for a specific month"""
+    visible_months = get_visible_months()
+    if month_key not in visible_months:
+        flash('This content is not available yet.', 'warning')
+        return redirect(url_for('index'))
+
     posts = Post.query.filter_by(month_key=month_key, status='published').order_by(Post.published_at.desc()).all()
-    
+
     # Get only posts marked as featured
     featured_posts = Post.query.filter_by(month_key=month_key, status='published', is_featured=True).order_by(Post.published_at.desc()).limit(5).all()
-    
-    # Get all available months
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
-    return render_template('archive.html', posts=posts, featured_posts=featured_posts, month_key=month_key, months=months)
+
+    return render_template('archive.html', posts=posts, featured_posts=featured_posts, month_key=month_key)
 
 
 @app.route('/post/<slug>')
@@ -141,24 +175,25 @@ def archive(month_key):
 def post_detail(slug):
     """Show full post with comments and likes"""
     post = Post.query.filter_by(slug=slug, status='published').first_or_404()
-    
+
+    # Check month visibility
+    visible_months = get_visible_months()
+    if post.month_key not in visible_months:
+        abort(404)
+
     # Get comments
     comments = Comment.query.filter_by(post_id=post.id).order_by(Comment.created_at.desc()).all()
-    
+
     # Get like count
     like_count = Like.query.filter_by(post_id=post.id).count()
-    
+
     # Check if current user liked
     user_liked = False
     if 'user_id' in session:
         user_liked = Like.query.filter_by(post_id=post.id, user_id=session['user_id']).first() is not None
-    
-    # Get all available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    
-    return render_template('post.html', post=post, comments=comments, like_count=like_count, 
-                          user_liked=user_liked, months=months)
+
+    return render_template('post.html', post=post, comments=comments, like_count=like_count,
+                          user_liked=user_liked)
 
 
 @app.template_filter('format_month')
@@ -183,20 +218,32 @@ def inject_now():
     return {'now': datetime.now(timezone.utc)}
 
 
+@app.route('/archives')
+@login_required
+def archives():
+    """Show all older months not displayed in navbar"""
+    visible_months = get_visible_months()
+    older_months = visible_months[3:]  # Months beyond the top 3 in navbar
+
+    months_data = []
+    for mk in older_months:
+        post_count = Post.query.filter_by(month_key=mk, status='published').count()
+        months_data.append({
+            'month_key': mk,
+            'post_count': post_count,
+        })
+
+    return render_template('archives.html', months_data=months_data)
+
+
 @app.errorhandler(404)
 def not_found(e):
-    # Get available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    return render_template('404.html', months=months), 404
+    return render_template('404.html'), 404
 
 
 @app.errorhandler(500)
 def server_error(e):
-    # Get available months for menu
-    months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
-    months = [m[0] for m in months]
-    return render_template('500.html', months=months), 500
+    return render_template('500.html'), 500
 
 
 if __name__ == '__main__':

@@ -46,12 +46,28 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('auth.login', next=request.url))
-        
+
         user = User.query.get(session['user_id'])
         if not user or not user.is_admin(current_app.config['ADMIN_EMAILS']):
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('index'))
-        
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def editor_required(f):
+    """Decorator to require editor access (admin OR prerelease user)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.url))
+
+        user = User.query.get(session['user_id'])
+        if not user or not user.can_edit_posts(current_app.config['ADMIN_EMAILS']):
+            flash('Access denied. Editor privileges required.', 'error')
+            return redirect(url_for('index'))
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -200,7 +216,9 @@ def callback():
         session['user_email'] = user.email
         session['user_name'] = user.name
         session['is_admin'] = user.is_admin(current_app.config['ADMIN_EMAILS'])
-        
+        session['is_prerelease'] = user.is_prerelease()
+        session['is_editor'] = session['is_admin'] or session['is_prerelease']
+
         # Redirect based on user role
         # Check if there's a specific next URL
         next_url = session.pop('next_url', None) or request.args.get('next')

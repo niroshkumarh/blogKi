@@ -20,9 +20,10 @@ class User(db.Model):
     entra_oid = db.Column(db.String(255), unique=True, nullable=False, index=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     name = db.Column(db.String(255))
+    role = db.Column(db.String(20), default='user', nullable=False)  # 'user' or 'prerelease'
     last_login_at = db.Column(db.DateTime, default=utcnow)
     created_at = db.Column(db.DateTime, default=utcnow)
-    
+
     # Relationships
     comments = db.relationship('Comment', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='user', lazy='dynamic', cascade='all, delete-orphan')
@@ -35,6 +36,14 @@ class User(db.Model):
     def is_admin(self, admin_emails):
         """Check if user is admin"""
         return self.email in admin_emails
+
+    def is_prerelease(self):
+        """Check if user is in the prerelease group"""
+        return self.role == 'prerelease'
+
+    def can_edit_posts(self, admin_emails):
+        """Check if user can create/edit/publish posts (admin or prerelease)"""
+        return self.is_admin(admin_emails) or self.is_prerelease()
 
 
 class Post(db.Model):
@@ -201,4 +210,17 @@ class ReadEvent(db.Model):
     
     def __repr__(self):
         return f'<ReadEvent {self.id} Post {self.post_id}>'
+
+
+class MonthVisibility(db.Model):
+    """Controls visibility of months - public or prerelease only"""
+    __tablename__ = 'month_visibility'
+
+    id = db.Column(db.Integer, primary_key=True)
+    month_key = db.Column(db.String(7), unique=True, nullable=False, index=True)  # e.g., '2026-01'
+    visibility = db.Column(db.String(20), default='prerelease', nullable=False)  # 'public' or 'prerelease'
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    def __repr__(self):
+        return f'<MonthVisibility {self.month_key}: {self.visibility}>'
 

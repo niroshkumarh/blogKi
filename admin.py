@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, send_file
 from werkzeug.utils import secure_filename
-from models import db, Post, User, Comment, Like, CommentLike, ReadEvent
+from models import db, Post, User, Comment, Like, CommentLike, ReadEvent, MonthVisibility
 from auth import admin_required
 from datetime import datetime
 from sqlalchemy import func
@@ -533,10 +533,17 @@ def post_new():
             
             db.session.add(post)
             db.session.commit()
-            
+
+            # Auto-create MonthVisibility record if it doesn't exist
+            existing_mv = MonthVisibility.query.filter_by(month_key=month_key).first()
+            if not existing_mv:
+                mv = MonthVisibility(month_key=month_key, visibility='prerelease')
+                db.session.add(mv)
+                db.session.commit()
+
             flash('Post created successfully', 'success')
             return redirect(url_for('admin.posts_list'))
-            
+
         except Exception as e:
             current_app.logger.error(f"Post creation error: {e}")
             flash('Failed to create post', 'error')
@@ -606,9 +613,16 @@ def post_edit(post_id):
             post.set_related_posts(related_posts if related_posts else None)
             
             post.updated_at = datetime.utcnow()
-            
+
             db.session.commit()
-            
+
+            # Auto-create MonthVisibility record if month_key changed
+            existing_mv = MonthVisibility.query.filter_by(month_key=post.month_key).first()
+            if not existing_mv:
+                mv = MonthVisibility(month_key=post.month_key, visibility='prerelease')
+                db.session.add(mv)
+                db.session.commit()
+
             flash('Post updated successfully', 'success')
             return redirect(url_for('admin.posts_list'))
             
@@ -1252,4 +1266,93 @@ def posts_import():
     
     # GET request - show import form
     return render_template('admin/posts_import.html')
+
+
+@admin_bp.route('/prerelease-users', methods=['GET', 'POST'])
+@admin_required
+def prerelease_users():
+    """Manage PreRelease group membership"""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        user_id = request.form.get('user_id')
+
+        user = User.query.get_or_404(user_id)
+
+        if action == 'add':
+            user.role = 'prerelease'
+            db.session.commit()
+            flash(f'{user.name or user.email} added to PreRelease group', 'success')
+        elif action == 'remove':
+            user.role = 'user'
+            db.session.commit()
+            flash(f'{user.name or user.email} removed from PreRelease group', 'success')
+
+        return redirect(url_for('admin.prerelease_users'))
+
+    prerelease_members = User.query.filter_by(role='prerelease').order_by(User.name).all()
+    regular_users = User.query.filter_by(role='user').order_by(User.name).all()
+
+    return render_template('admin/prerelease_users.html',
+                          prerelease_members=prerelease_members,
+                          regular_users=regular_users)
+
+
+@admin_bp.route('/month-visibility', methods=['GET', 'POST'])
+@admin_required
+def month_visibility():
+    """Manage month visibility (public vs prerelease)"""
+    if request.method == 'POST':
+        month_key = request.form.get('month_key')
+        visibility = request.form.get('visibility')
+
+        if visibility not in ('public', 'prerelease'):
+            flash('Invalid visibility value', 'error')
+            return redirect(url_for('admin.month_visibility'))
+
+        mv = MonthVisibility.query.filter_by(month_key=month_key).first()
+        if mv:
+            mv.visibility = visibility
+        else:
+            mv = MonthVisibility(month_key=month_key, visibility=visibility)
+            db.session.add(mv)
+
+        db.session.commit()
+        flash(f'{month_key} set to {visibility}', 'success')
+        return redirect(url_for('admin.month_visibility'))
+
+    # Get all months that have any posts
+    all_months = db.session.query(Post.month_key).distinct().order_by(Post.month_key.desc()).all()
+    all_month_keys = [m[0] for m in all_months]
+
+    # Get visibility records
+    visibility_records = {mv.month_key: mv.visibility for mv in MonthVisibility.query.all()}
+
+    months_data = []
+    for mk in all_month_keys:
+        published_count = Post.query.filter_by(month_key=mk, status='published').count()
+        draft_count = Post.query.filter_by(month_key=mk, status='draft').count()
+        drafts = Post.query.filter_by(month_key=mk, status='draft').all()
+
+        months_data.append({
+            'month_key': mk,
+            'visibility': visibility_records.get(mk, 'prerelease'),
+            'published_count': published_count,
+            'draft_count': draft_count,
+            'drafts': drafts,
+        })
+
+    return render_template('admin/month_visibility.html', months_data=months_data)
+
+
+@admin_bp.route('/month-visibility/publish-post/<int:post_id>', methods=['POST'])
+@admin_required
+def publish_post_from_visibility(post_id):
+    """Quick publish a draft post from the month visibility page"""
+    from datetime import timezone
+    post = Post.query.get_or_404(post_id)
+    post.status = 'published'
+    post.published_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash(f'Post "{post.title}" published', 'success')
+    return redirect(url_for('admin.month_visibility'))
 

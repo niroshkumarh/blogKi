@@ -53,6 +53,7 @@ services:
         python migrate_nested_comments.py &&
         python migrate_read_events_anonymous.py &&
         python migrate_posts.py &&
+        python migrate_prerelease_and_visibility.py &&
         python app.py
       "
 

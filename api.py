@@ -2,7 +2,7 @@
 API endpoints for comments, likes, and read tracking
 """
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Post, Comment, Like, ReadEvent, User, CommentLike
+from models import db, Post, Comment, Like, ReadEvent, User, CommentLike, MonthVisibility
 from auth import login_required
 from datetime import datetime
 import requests
@@ -14,6 +14,17 @@ from functools import lru_cache
 import hashlib
 
 api_bp = Blueprint('api', __name__)
+
+
+def _check_month_visibility(post):
+    """Check if the post's month is visible to the current user. Returns error response or None."""
+    if session.get('is_admin') or session.get('is_prerelease'):
+        return None
+    mv = MonthVisibility.query.filter_by(month_key=post.month_key).first()
+    if not mv or mv.visibility != 'public':
+        return jsonify({'error': 'Content not available'}), 403
+    return None
+
 
 # Simple in-memory cache for link previews (TTL: 1 hour)
 LINK_PREVIEW_CACHE = {}
@@ -269,7 +280,12 @@ def toggle_like(post_id):
             return jsonify({'error': 'Not authenticated'}), 401
         
         post = Post.query.get_or_404(post_id)
-        
+
+        # Check month visibility
+        vis_error = _check_month_visibility(post)
+        if vis_error:
+            return vis_error
+
         # Check if already liked
         existing_like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
         
@@ -319,7 +335,12 @@ def add_comment(post_id):
             return jsonify({'error': 'Comment too long (max 2000 characters)'}), 400
         
         post = Post.query.get_or_404(post_id)
-        
+
+        # Check month visibility
+        vis_error = _check_month_visibility(post)
+        if vis_error:
+            return vis_error
+
         # If parent_id provided, validate it exists and belongs to this post
         if parent_id:
             parent_comment = Comment.query.get(parent_id)
@@ -490,8 +511,14 @@ def get_comments(post_id):
     """Get all comments for a post (nested structure with likes)"""
     try:
         post = Post.query.get_or_404(post_id)
+
+        # Check month visibility
+        vis_error = _check_month_visibility(post)
+        if vis_error:
+            return vis_error
+
         user_id = session.get('user_id')
-        
+
         # Get all top-level comments (no parent)
         comments = Comment.query.filter_by(post_id=post_id, parent_id=None).order_by(Comment.created_at.desc()).all()
         

@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Month Visibility{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Month Visibility Control</h1>
+</div>
+
+<p class="text-muted mb-4">Control which months are visible to all users (Public) or only to Admin and PreRelease users (PreRelease). New months default to PreRelease.</p>
+
+{% if months_data %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Visibility</th>
+                <th>Published</th>
+                <th>Drafts</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for md in months_data %}
+            <tr>
+                <td class="font-weight-bold">{{ md.month_key|format_month }}</td>
+                <td>
+                    {% if md.visibility == 'public' %}
+                    <span class="badge badge-success">Public</span>
+                    {% else %}
+                    <span class="badge badge-warning">PreRelease</span>
+                    {% endif %}
+                </td>
+                <td>{{ md.published_count }}</td>
+                <td>
+                    {% if md.draft_count > 0 %}
+                    <span class="text-muted">{{ md.draft_count }} draft{{ 's' if md.draft_count != 1 }}</span>
+                    {% for draft in md.drafts %}
+                    <form method="POST" action="{{ url_for('admin.publish_post_from_visibility', post_id=draft.id) }}" class="d-inline ml-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-1" onclick="return confirm('Publish &quot;{{ draft.title }}&quot;?')" title="Publish: {{ draft.title }}">
+                            <i class="fas fa-check"></i> {{ draft.title|truncate(25) }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="month_key" value="{{ md.month_key }}">
+                        {% if md.visibility == 'public' %}
+                        <input type="hidden" name="visibility" value="prerelease">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Set {{ md.month_key|format_month }} to PreRelease?')">
+                            <i class="fas fa-lock"></i> Set PreRelease
+                        </button>
+                        {% else %}
+                        <input type="hidden" name="visibility" value="public">
+                        <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('Make {{ md.month_key|format_month }} public?')">
+                            <i class="fas fa-globe"></i> Make Public
+                        </button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="fas fa-calendar-times fa-3x mb-3 d-block"></i>
+    <p>No months with posts found.</p>
+</div>
+{% endif %}
+{% endblock %}
