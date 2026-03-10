@@ -4,7 +4,7 @@ Tenant-only blog with Entra ID authentication
 """
 import os
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, session, send_from_directory, flash, abort
+from flask import Flask, render_template, redirect, url_for, session, send_from_directory, flash, abort, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.middleware.proxy_fix import ProxyFix
 # from flask_session import Session  # Not needed - using Flask's built-in session
@@ -86,13 +86,13 @@ def get_visible_months():
     ).distinct().all()
     all_month_keys = [m[0] for m in all_months]
 
-    is_admin = session.get('is_admin', False)
     is_prerelease = session.get('is_prerelease', False)
 
-    if is_admin or is_prerelease:
+    if is_prerelease:
+        # PreRelease users see all months (public + prerelease)
         return sorted(all_month_keys, reverse=True)
 
-    # Regular users: only public months
+    # Everyone else (including admins not in prerelease group): only public months
     public_months = db.session.query(MonthVisibility.month_key).filter_by(
         visibility='public'
     ).all()
@@ -234,6 +234,12 @@ def archives():
         })
 
     return render_template('archives.html', months_data=months_data)
+
+
+@app.errorhandler(413)
+def request_entity_too_large(e):
+    flash('Upload failed: File size exceeds the 16MB limit. Please reduce the image size and try again.', 'error')
+    return redirect(request.url), 302
 
 
 @app.errorhandler(404)

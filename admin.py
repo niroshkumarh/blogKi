@@ -546,7 +546,10 @@ def post_new():
 
         except Exception as e:
             current_app.logger.error(f"Post creation error: {e}")
-            flash('Failed to create post', 'error')
+            if '413' in str(e) or 'Too Large' in str(e):
+                flash('Failed to create post: Content exceeds the 16MB size limit. Please reduce image sizes or use fewer images.', 'error')
+            else:
+                flash('Failed to create post', 'error')
             return redirect(url_for('admin.post_new'))
     
     all_posts = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).all()
@@ -628,7 +631,10 @@ def post_edit(post_id):
             
         except Exception as e:
             current_app.logger.error(f"Post update error: {e}")
-            flash('Failed to update post', 'error')
+            if '413' in str(e) or 'Too Large' in str(e):
+                flash('Failed to update post: Content exceeds the 16MB size limit. Please reduce image sizes or use fewer images.', 'error')
+            else:
+                flash('Failed to update post', 'error')
             return redirect(url_for('admin.post_edit', post_id=post_id))
     
     all_posts = Post.query.filter_by(status='published').order_by(Post.published_at.desc()).all()
@@ -1010,6 +1016,8 @@ def upload_image():
         
     except Exception as e:
         current_app.logger.error(f"Image upload error: {e}")
+        if '413' in str(e) or 'Too Large' in str(e):
+            return jsonify({'error': 'Image exceeds the 16MB size limit. Please reduce the image size.'}), 413
         return jsonify({'error': 'Upload failed'}), 500
 
 
@@ -1279,9 +1287,12 @@ def prerelease_users():
         user = User.query.get_or_404(user_id)
 
         if action == 'add':
-            user.role = 'prerelease'
-            db.session.commit()
-            flash(f'{user.name or user.email} added to PreRelease group', 'success')
+            if user.is_admin(current_app.config['ADMIN_EMAILS']):
+                flash(f'{user.name or user.email} is already an admin with full access', 'warning')
+            else:
+                user.role = 'prerelease'
+                db.session.commit()
+                flash(f'{user.name or user.email} added to PreRelease group', 'success')
         elif action == 'remove':
             user.role = 'user'
             db.session.commit()
@@ -1289,8 +1300,11 @@ def prerelease_users():
 
         return redirect(url_for('admin.prerelease_users'))
 
+    admin_emails = current_app.config['ADMIN_EMAILS']
     prerelease_members = User.query.filter_by(role='prerelease').order_by(User.name).all()
-    regular_users = User.query.filter_by(role='user').order_by(User.name).all()
+    # Exclude admins — they already have full access
+    regular_users = [u for u in User.query.filter_by(role='user').order_by(User.name).all()
+                     if u.email not in admin_emails]
 
     return render_template('admin/prerelease_users.html',
                           prerelease_members=prerelease_members,

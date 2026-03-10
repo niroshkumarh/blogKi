@@ -18,8 +18,8 @@ api_bp = Blueprint('api', __name__)
 
 def _check_month_visibility(post):
     """Check if the post's month is visible to the current user. Returns error response or None."""
-    if session.get('is_admin') or session.get('is_prerelease'):
-        return None
+    if session.get('is_prerelease'):
+        return None  # PreRelease users see all months
     mv = MonthVisibility.query.filter_by(month_key=post.month_key).first()
     if not mv or mv.visibility != 'public':
         return jsonify({'error': 'Content not available'}), 403
