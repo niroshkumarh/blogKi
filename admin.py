@@ -2,6 +2,7 @@
 Admin module - Dashboard and post editor
 """
 import os
+import re
 import base64
 from io import BytesIO
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, send_file
@@ -14,6 +15,45 @@ from sqlalchemy.orm import aliased
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment
 from PIL import Image
+
+
+def parse_user_agent(ua_string):
+    """Parse user agent string into a readable browser/OS label."""
+    if not ua_string:
+        return 'Unknown'
+
+    browser = 'Unknown Browser'
+    os_name = 'Unknown OS'
+
+    # Detect browser
+    if 'Edg/' in ua_string:
+        match = re.search(r'Edg/([\d.]+)', ua_string)
+        browser = f"Edge {match.group(1).split('.')[0]}" if match else 'Edge'
+    elif 'Chrome/' in ua_string and 'Safari/' in ua_string:
+        match = re.search(r'Chrome/([\d.]+)', ua_string)
+        browser = f"Chrome {match.group(1).split('.')[0]}" if match else 'Chrome'
+    elif 'Firefox/' in ua_string:
+        match = re.search(r'Firefox/([\d.]+)', ua_string)
+        browser = f"Firefox {match.group(1).split('.')[0]}" if match else 'Firefox'
+    elif 'Safari/' in ua_string and 'Chrome/' not in ua_string:
+        match = re.search(r'Version/([\d.]+)', ua_string)
+        browser = f"Safari {match.group(1).split('.')[0]}" if match else 'Safari'
+
+    # Detect OS
+    if 'Windows NT 10' in ua_string:
+        os_name = 'Windows 10/11'
+    elif 'Windows NT' in ua_string:
+        os_name = 'Windows'
+    elif 'Mac OS X' in ua_string:
+        os_name = 'macOS'
+    elif 'Linux' in ua_string and 'Android' not in ua_string:
+        os_name = 'Linux'
+    elif 'Android' in ua_string:
+        os_name = 'Android'
+    elif 'iPhone' in ua_string or 'iPad' in ua_string:
+        os_name = 'iOS'
+
+    return f"{browser} / {os_name}"
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -292,7 +332,7 @@ def month_analytics(month_key):
         .limit(20)
         .all()
     )
-    top_user_agents = (
+    top_user_agents_raw = (
         db.session.query(ReadEvent.user_agent, func.count(ReadEvent.id))
         .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.user_agent.isnot(None))
         .group_by(ReadEvent.user_agent)
@@ -300,6 +340,13 @@ def month_analytics(month_key):
         .limit(20)
         .all()
     )
+    # Parse user agents into readable labels and aggregate
+    ua_parsed = {}
+    for ua, cnt in top_user_agents_raw:
+        label = parse_user_agent(ua)
+        ua_parsed[label] = ua_parsed.get(label, 0) + int(cnt)
+    top_user_agents = sorted(ua_parsed.items(), key=lambda x: x[1], reverse=True)[:15]
+
     recent_reads = (
         ReadEvent.query
         .filter(ReadEvent.post_id.in_(post_ids))
@@ -307,6 +354,30 @@ def month_analytics(month_key):
         .limit(200)
         .all()
     )
+
+    # Previous month comparison
+    prev_month_key = None
+    prev_summary = {}
+    try:
+        year, month = int(month_key[:4]), int(month_key[5:7])
+        if month == 1:
+            prev_month_key = f"{year - 1}-12"
+        else:
+            prev_month_key = f"{year}-{month - 1:02d}"
+
+        prev_post_ids = [p.id for p in Post.query.filter_by(status='published', month_key=prev_month_key).all()]
+        if prev_post_ids:
+            prev_summary = {
+                'total_reads': ReadEvent.query.filter(ReadEvent.post_id.in_(prev_post_ids)).count(),
+                'unique_readers': (
+                    db.session.query(ReadEvent.user_id).filter(ReadEvent.post_id.in_(prev_post_ids), ReadEvent.user_id.isnot(None)).distinct().count() +
+                    db.session.query(ReadEvent.anon_id).filter(ReadEvent.post_id.in_(prev_post_ids), ReadEvent.anon_id.isnot(None)).distinct().count()
+                ),
+                'total_likes': Like.query.filter(Like.post_id.in_(prev_post_ids)).count(),
+                'total_comments': Comment.query.filter(Comment.post_id.in_(prev_post_ids)).count(),
+            }
+    except Exception:
+        pass
 
     # Reads by day (micro granularity)
     reads_by_day = (
@@ -446,6 +517,7 @@ def month_analytics(month_key):
         month_key=month_key,
         months=months,
         summary=summary,
+        prev_summary=prev_summary,
         posts=posts,
         tables=tables,
     )
@@ -682,7 +754,18 @@ def post_stats(post_id):
     
     # Get logged-in viewers
     viewers = db.session.query(User).join(ReadEvent).filter(ReadEvent.post_id == post_id).distinct().all()
-    
+
+    # Get anonymous reader summaries
+    anon_readers = db.session.query(
+        ReadEvent.anon_id,
+        func.count(ReadEvent.id).label('events'),
+        func.max(ReadEvent.created_at).label('last_seen'),
+        func.max(ReadEvent.ip_address).label('ip_address')
+    ).filter(
+        ReadEvent.post_id == post_id,
+        ReadEvent.anon_id.isnot(None)
+    ).group_by(ReadEvent.anon_id).all()
+
     # Get all read events
     read_events = ReadEvent.query.filter_by(post_id=post_id).order_by(ReadEvent.created_at.desc()).all()
     avg_completion = db.session.query(func.avg(ReadEvent.percent)).filter_by(post_id=post_id).scalar() or 0
@@ -731,10 +814,12 @@ def post_stats(post_id):
     return render_template('admin/post_stats.html',
                           post=post,
                           viewers=viewers,
+                          anon_readers=anon_readers,
                           total_views=total_views,
                           avg_completion=round(avg_completion, 1),
                           avg_time=round(avg_time / 60, 1) if avg_time else 0,
                           likes=likes,
+                          read_events=read_events,
                           comment_data=comment_data,
                           total_comments=len(all_comments),
                           top_level_count=len(top_level_comments),
@@ -831,19 +916,30 @@ def readers_list():
     logged_in_readers = logged_in_readers.group_by(User.id, User.email, User.name).all()
     
     # Get anonymous readers with stats
+    # Subquery to get the IP from the most recent event per anon_id
+    latest_anon_event = db.session.query(
+        ReadEvent.anon_id,
+        func.max(ReadEvent.id).label('latest_id')
+    ).filter(ReadEvent.anon_id.isnot(None)).group_by(ReadEvent.anon_id).subquery()
+
+    latest_ip = db.session.query(
+        latest_anon_event.c.anon_id,
+        ReadEvent.ip_address
+    ).join(ReadEvent, ReadEvent.id == latest_anon_event.c.latest_id).subquery()
+
     anon_readers = db.session.query(
         ReadEvent.anon_id.label('anon_id'),
         func.count(func.distinct(ReadEvent.post_id)).label('posts_read'),
         func.count(ReadEvent.id).label('total_events'),
         func.max(ReadEvent.created_at).label('last_seen'),
         func.min(ReadEvent.created_at).label('first_seen'),
-        func.max(ReadEvent.ip_address).label('ip_address')
-    ).filter(ReadEvent.anon_id.isnot(None))
+        latest_ip.c.ip_address.label('ip_address')
+    ).outerjoin(latest_ip, latest_ip.c.anon_id == ReadEvent.anon_id).filter(ReadEvent.anon_id.isnot(None))
     
     if post_filter:
         anon_readers = anon_readers.filter(ReadEvent.post_id == post_filter)
     
-    anon_readers = anon_readers.group_by(ReadEvent.anon_id).all()
+    anon_readers = anon_readers.group_by(ReadEvent.anon_id, latest_ip.c.ip_address).all()
     
     # Combine and format
     readers = []

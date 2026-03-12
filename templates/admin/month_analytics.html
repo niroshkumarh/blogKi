@@ -2,637 +2,906 @@
 
 {% block title %}Monthly Analytics{% endblock %}
 
+{% block extra_css %}
+<style>
+    .analytics-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .analytics-header h1 { font-size: 1.75rem; font-weight: 700; margin: 0; }
+    .analytics-header .month-label { opacity: 0.85; font-size: 0.95rem; }
+
+    .stat-card-v2 {
+        background: #fff;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 1px solid #f0f0f0;
+        transition: all 0.25s ease;
+        height: 100%;
+    }
+    .stat-card-v2:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .stat-card-v2 .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.2;
+    }
+    .stat-card-v2 .stat-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .stat-card-v2 .stat-icon {
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+    .stat-card-v2 .trend {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+    .trend-up { color: #059669; }
+    .trend-down { color: #dc2626; }
+    .trend-neutral { color: #6b7280; }
+
+    .icon-blue { background: #dbeafe; color: #2563eb; }
+    .icon-green { background: #d1fae5; color: #059669; }
+    .icon-purple { background: #ede9fe; color: #7c3aed; }
+    .icon-red { background: #fee2e2; color: #dc2626; }
+    .icon-orange { background: #fed7aa; color: #ea580c; }
+    .icon-cyan { background: #cffafe; color: #0891b2; }
+    .icon-pink { background: #fce7f3; color: #db2777; }
+    .icon-yellow { background: #fef3c7; color: #d97706; }
+
+    .nav-tabs-analytics {
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 25px;
+    }
+    .nav-tabs-analytics .nav-link {
+        border: none;
+        color: #6b7280;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 12px 20px;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    .nav-tabs-analytics .nav-link:hover {
+        color: #2563eb;
+        border-bottom-color: #dbeafe;
+    }
+    .nav-tabs-analytics .nav-link.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+        background: transparent;
+    }
+
+    .chart-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 1px solid #f0f0f0;
+        margin-bottom: 25px;
+    }
+    .chart-card .card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .chart-card .card-title i { color: #2563eb; }
+
+    .analytics-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .analytics-table thead th {
+        background: #f8fafc;
+        border-bottom: 2px solid #e5e7eb;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    .analytics-table thead th:hover { background: #f1f5f9; }
+    .analytics-table thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 0.65rem; }
+    .analytics-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+    .analytics-table tbody tr:hover { background: #f8fafc; }
+
+    .event-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .event-item {
+        padding: 10px 14px;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+    }
+    .event-item:hover { background: #f8fafc; }
+    .event-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700; color: #fff;
+        flex-shrink: 0;
+    }
+    .show-more-btn {
+        display: block;
+        text-align: center;
+        padding: 10px;
+        color: #2563eb;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border-top: 1px solid #f3f4f6;
+    }
+    .show-more-btn:hover { background: #f8fafc; }
+
+    .badge-pill-custom {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .analytics-header { padding: 20px; }
+        .stat-card-v2 .stat-value { font-size: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+<!-- Header -->
+<div class="analytics-header d-flex justify-content-between align-items-center flex-wrap">
     <div>
-        <h1 class="h2 mb-0">Monthly Analytics</h1>
+        <h1><i class="fas fa-chart-line mr-2"></i>Monthly Analytics</h1>
         {% if month_key %}
-            <div class="text-muted">Month: <code>{{ month_key }}</code></div>
+            <div class="month-label mt-1">{{ month_key }}</div>
         {% endif %}
     </div>
-
-    <form method="GET" action="{{ url_for('admin.analytics') }}" class="form-inline">
-        <label class="mr-2 text-muted">Month</label>
-        <select class="form-control mr-2" onchange="if(this.value){ window.location='{{ url_for('admin.month_analytics', month_key='__MONTH__') }}'.replace('__MONTH__', this.value); }">
+    <form method="GET" class="d-flex align-items-center mt-2 mt-md-0">
+        <select class="form-control form-control-sm mr-2" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); min-width: 140px;"
+                onchange="if(this.value){ window.location='{{ url_for('admin.month_analytics', month_key='__MONTH__') }}'.replace('__MONTH__', this.value); }">
             <option value="">Select month</option>
             {% for m in months %}
-                <option value="{{ m }}" {% if month_key == m %}selected{% endif %}>{{ m }}</option>
+                <option value="{{ m }}" {% if month_key == m %}selected{% endif %} style="color: #111;">{{ m }}</option>
             {% endfor %}
         </select>
-        <a class="btn btn-outline-secondary" href="{{ url_for('admin.analytics') }}">Latest</a>
+        <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin.analytics') }}">Latest</a>
     </form>
 </div>
 
 {% if not month_key %}
-    <div class="alert alert-info">
-        Select a month to see analytics.
-    </div>
+    <div class="alert alert-info">Select a month to see analytics.</div>
 {% endif %}
 
 {% if month_key %}
+<!-- Summary Cards -->
+<div class="row mb-4">
+    {% set cards = [
+        ('Read Events', summary.total_reads, 'fas fa-book-open', 'icon-blue', 'total_reads'),
+        ('Unique Readers', summary.unique_readers, 'fas fa-users', 'icon-green', 'unique_readers'),
+        ('Post Likes', summary.total_likes, 'fas fa-heart', 'icon-red', 'total_likes'),
+        ('Comments', summary.total_comments, 'fas fa-comments', 'icon-purple', 'total_comments'),
+        ('Published Posts', summary.total_posts, 'fas fa-file-alt', 'icon-cyan', ''),
+        ('Registered Users', summary.total_registered_users, 'fas fa-user-check', 'icon-orange', ''),
+        ('Comment Likes', summary.total_comment_likes, 'fas fa-thumbs-up', 'icon-pink', ''),
+        ('Logged-in / Anon', '', 'fas fa-user-friends', 'icon-yellow', '')
+    ] %}
+    {% for label, value, icon, icon_cls, prev_key in cards %}
+    <div class="col-xl-3 col-md-4 col-sm-6 mb-3">
+        <div class="stat-card-v2">
+            <div class="stat-icon {{ icon_cls }}"><i class="{{ icon }}"></i></div>
+            <div class="stat-label">{{ label }}</div>
+            {% if label == 'Logged-in / Anon' %}
+                <div class="stat-value">{{ summary.unique_logged_in_readers }} / {{ summary.unique_anon_readers }}</div>
+            {% else %}
+                <div class="stat-value">{{ value }}</div>
+            {% endif %}
+            {% if prev_key and prev_summary and prev_summary.get(prev_key, 0) > 0 %}
+                {% set prev_val = prev_summary[prev_key] %}
+                {% set diff = ((value - prev_val) / prev_val * 100)|round(0)|int %}
+                {% if diff > 0 %}
+                    <div class="trend trend-up"><i class="fas fa-arrow-up"></i> {{ diff }}% vs prev month</div>
+                {% elif diff < 0 %}
+                    <div class="trend trend-down"><i class="fas fa-arrow-down"></i> {{ diff|abs }}% vs prev month</div>
+                {% else %}
+                    <div class="trend trend-neutral">Same as prev month</div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs-analytics nav-tabs" id="analyticsTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab">
+            <i class="fas fa-th-large mr-1"></i> Overview
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="engagement-tab" data-toggle="tab" href="#engagement" role="tab">
+            <i class="fas fa-chart-bar mr-1"></i> Engagement
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="activity-tab" data-toggle="tab" href="#activity" role="tab">
+            <i class="fas fa-stream mr-1"></i> Activity Feed
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="technical-tab" data-toggle="tab" href="#technical" role="tab">
+            <i class="fas fa-cogs mr-1"></i> Technical
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content" id="analyticsTabContent">
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<div class="tab-pane fade show active" id="overview" role="tabpanel">
+
+    <!-- Charts Row: Reads by Day + Reads by Hour -->
     <div class="row">
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Total Posts</div>
-                <div class="h3 mb-0">{{ summary.total_posts }}</div>
+        <div class="col-lg-8 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-chart-area"></i> Reads Over Time</div>
+                <canvas id="readsByDayChart" height="80"></canvas>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Total Reads</div>
-                <div class="h3 mb-0">{{ summary.total_reads }}</div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Unique Readers</div>
-                <div class="h3 mb-0">{{ summary.unique_readers }}</div>
-                <div class="text-muted small">
-                    {{ summary.unique_logged_in_readers }} logged-in + {{ summary.unique_anon_readers }} anonymous
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Registered Users</div>
-                <div class="h3 mb-0">{{ summary.total_registered_users }}</div>
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-clock"></i> Reads by Hour</div>
+                <canvas id="readsByHourChart" height="180"></canvas>
             </div>
         </div>
     </div>
 
+    <!-- Post Breakdown Table -->
+    <div class="chart-card mb-4">
+        <div class="card-title justify-content-between">
+            <span><i class="fas fa-table"></i> Post Breakdown</span>
+            <span class="text-muted" style="font-size: 0.75rem; font-weight: 400;">Click column headers to sort</span>
+        </div>
+        <div class="table-responsive">
+            <table class="analytics-table" id="postBreakdownTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0, 'str')">Post <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th onclick="sortTable(1, 'num')" class="text-right">Views <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th onclick="sortTable(2, 'num')" class="text-right">Likes <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th onclick="sortTable(3, 'num')" class="text-right">Comments <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th onclick="sortTable(4, 'num')" class="text-right">Avg Completion <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th onclick="sortTable(5, 'num')" class="text-right">Time (sec) <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in tables.post_rows %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('admin.post_stats', post_id=r.post.id) }}" style="color: #111; font-weight: 500;">{{ r.post.title }}</a>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ r.post.slug }}</div>
+                        </td>
+                        <td class="text-right font-weight-bold">{{ r.views }}</td>
+                        <td class="text-right">{{ r.likes }}</td>
+                        <td class="text-right">{{ r.comments }}</td>
+                        <td class="text-right">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <div style="width: 60px; background: #e5e7eb; height: 6px; border-radius: 3px; overflow: hidden; margin-right: 8px;">
+                                    <div style="width: {{ r.avg_completion }}%; background: {% if r.avg_completion >= 75 %}#059669{% elif r.avg_completion >= 40 %}#d97706{% else %}#dc2626{% endif %}; height: 100%;"></div>
+                                </div>
+                                {{ r.avg_completion }}%
+                            </div>
+                        </td>
+                        <td class="text-right">{{ r.total_seconds }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('admin.post_stats', post_id=r.post.id) }}" class="btn btn-sm btn-outline-primary" title="View Stats"><i class="fas fa-chart-bar"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Posts -->
     <div class="row">
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Total Likes</div>
-                <div class="h3 mb-0">{{ summary.total_likes }}</div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Total Comments</div>
-                <div class="h3 mb-0">{{ summary.total_comments }}</div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Comment Likes</div>
-                <div class="h3 mb-0">{{ summary.total_comment_likes }}</div>
-                <div class="text-muted small">Likes on comments (not post likes)</div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-3">
-            <div class="stat-card">
-                <div class="text-muted">Reads by Day (micro granularity)</div>
-                {% if tables.reads_by_day and tables.reads_by_day|length > 0 %}
-                    <div class="table-responsive mt-2">
-                        <table class="table table-sm mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th class="text-right">Reads</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for row in tables.reads_by_day %}
-                                    <tr>
-                                        <td>{{ row.day }}</td>
-                                        <td class="text-right">{{ row.reads }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-eye text-primary"></i> Top by Views</div>
+                {% for r in tables.top_by_views %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="font-size: 0.85rem;">
+                    <div>
+                        <span class="text-muted mr-2">{{ loop.index }}.</span>
+                        <a href="{{ url_for('admin.post_stats', post_id=r.post.id) }}" style="color: #111;">{{ r.post.title|truncate(35) }}</a>
                     </div>
+                    <span class="badge badge-primary badge-pill-custom">{{ r.views }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-heart text-danger"></i> Top by Likes</div>
+                {% for r in tables.top_by_likes %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="font-size: 0.85rem;">
+                    <div>
+                        <span class="text-muted mr-2">{{ loop.index }}.</span>
+                        <a href="{{ url_for('admin.post_stats', post_id=r.post.id) }}" style="color: #111;">{{ r.post.title|truncate(35) }}</a>
+                    </div>
+                    <span class="badge badge-danger badge-pill-custom">{{ r.likes }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-comments text-success"></i> Top by Comments</div>
+                {% for r in tables.top_by_comments %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="font-size: 0.85rem;">
+                    <div>
+                        <span class="text-muted mr-2">{{ loop.index }}.</span>
+                        <a href="{{ url_for('admin.post_stats', post_id=r.post.id) }}" style="color: #111;">{{ r.post.title|truncate(35) }}</a>
+                    </div>
+                    <span class="badge badge-success badge-pill-custom">{{ r.comments }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ENGAGEMENT TAB ==================== -->
+<div class="tab-pane fade" id="engagement" role="tabpanel">
+
+    <div class="row">
+        <!-- Day of Week Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-calendar-week"></i> Reads by Day of Week</div>
+                <canvas id="readsByDowChart" height="200"></canvas>
+            </div>
+        </div>
+        <!-- Scroll Progress Doughnut -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-scroll"></i> Reading Depth Distribution</div>
+                <canvas id="progressChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reads by Day Table -->
+    <div class="chart-card mb-4">
+        <div class="card-title"><i class="fas fa-calendar-day"></i> Daily Read Events</div>
+        {% if tables.reads_by_day and tables.reads_by_day|length > 0 %}
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="analytics-table">
+                <thead><tr><th>Date</th><th class="text-right">Read Events</th><th style="width: 50%;">Volume</th></tr></thead>
+                <tbody>
+                    {% set max_day = tables.reads_by_day|map(attribute='reads')|max %}
+                    {% for row in tables.reads_by_day %}
+                    <tr>
+                        <td><code>{{ row.day }}</code></td>
+                        <td class="text-right font-weight-bold">{{ row.reads }}</td>
+                        <td>
+                            <div style="background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="width: {{ (row.reads / max_day * 100) if max_day > 0 else 0 }}%; background: linear-gradient(90deg, #2563eb, #3b82f6); height: 100%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="text-muted text-center py-4">No read events for this month.</div>
+        {% endif %}
+    </div>
+
+    <!-- Post Transitions -->
+    <div class="chart-card mb-4">
+        <div class="card-title"><i class="fas fa-exchange-alt"></i> Post-to-Post Transitions</div>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: -10px;">Same reader reads different posts within 30 minutes</p>
+        {% if tables.transitions and tables.transitions|length > 0 %}
+        <div class="table-responsive">
+            <table class="analytics-table">
+                <thead><tr><th>From</th><th></th><th>To</th><th class="text-right">Count</th></tr></thead>
+                <tbody>
+                    {% for r in tables.transitions %}
+                    <tr>
+                        <td>
+                            {% if r.from_slug %}<a href="{{ url_for('post_detail', slug=r.from_slug) }}" target="_blank">{{ r.from_title|truncate(40) }}</a>{% else %}{{ r.from_title }}{% endif %}
+                        </td>
+                        <td class="text-center text-muted"><i class="fas fa-long-arrow-alt-right"></i></td>
+                        <td>
+                            {% if r.to_slug %}<a href="{{ url_for('post_detail', slug=r.to_slug) }}" target="_blank">{{ r.to_title|truncate(40) }}</a>{% else %}{{ r.to_title }}{% endif %}
+                        </td>
+                        <td class="text-right"><span class="badge badge-primary badge-pill-custom">{{ r.count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="text-muted text-center py-4">Not enough data for transition analysis.</div>
+        {% endif %}
+    </div>
+
+    <!-- Top Comments by Likes -->
+    <div class="chart-card mb-4">
+        <div class="card-title"><i class="fas fa-trophy"></i> Top Comments by Likes</div>
+        {% if tables.top_comments_by_likes and tables.top_comments_by_likes|length > 0 %}
+        <div class="table-responsive">
+            <table class="analytics-table">
+                <thead><tr><th>Comment</th><th class="text-right">Likes</th></tr></thead>
+                <tbody>
+                    {% for r in tables.top_comments_by_likes %}
+                    <tr>
+                        <td style="font-size: 0.85rem;">{{ (r.comment.body or '')[:180] }}</td>
+                        <td class="text-right"><span class="badge badge-danger badge-pill-custom">{{ r.likes }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="text-muted text-center py-4">No comments found.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ==================== ACTIVITY FEED TAB ==================== -->
+<div class="tab-pane fade" id="activity" role="tabpanel">
+    <div class="row">
+        <!-- Likes Feed -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-heart text-danger"></i> Recent Likes</div>
+                {% if tables.like_rows and tables.like_rows|length > 0 %}
+                <div class="event-list" id="likesList">
+                    {% for r in tables.like_rows[:20] %}
+                    <div class="event-item">
+                        <div class="event-avatar" style="background: #dc2626;"><i class="fas fa-heart" style="font-size: 0.65rem;"></i></div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #111;">{{ r.user_name or r.user_email }}</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">
+                                liked <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title|truncate(40) }}</a>
+                            </div>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.liked_at.strftime('%b %d, %H:%M') if r.liked_at else '' }}</div>
+                    </div>
+                    {% endfor %}
+                    {% for r in tables.like_rows[20:] %}
+                    <div class="event-item" style="display: none;" data-extra="likes">
+                        <div class="event-avatar" style="background: #dc2626;"><i class="fas fa-heart" style="font-size: 0.65rem;"></i></div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #111;">{{ r.user_name or r.user_email }}</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">
+                                liked <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title|truncate(40) }}</a>
+                            </div>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.liked_at.strftime('%b %d, %H:%M') if r.liked_at else '' }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if tables.like_rows|length > 20 %}
+                <div class="show-more-btn" onclick="document.querySelectorAll('[data-extra=likes]').forEach(e => e.style.display=''); this.remove();">
+                    Show all {{ tables.like_rows|length }} likes
+                </div>
+                {% endif %}
                 {% else %}
-                    <div class="text-muted mt-2">No read events yet for this month.</div>
+                    <div class="text-muted text-center py-4">No likes this month.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Comments Feed -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-comment text-primary"></i> Recent Comments</div>
+                {% if tables.comment_rows and tables.comment_rows|length > 0 %}
+                <div class="event-list" id="commentsList">
+                    {% for r in tables.comment_rows[:20] %}
+                    <div class="event-item">
+                        <div class="event-avatar" style="background: #2563eb;"><i class="fas fa-comment" style="font-size: 0.65rem;"></i></div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #111;">{{ r.user_name or r.user_email }}</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">
+                                on <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title|truncate(30) }}</a>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #4b5563; margin-top: 3px;">{{ r.body|truncate(100) }}</div>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.commented_at.strftime('%b %d, %H:%M') if r.commented_at else '' }}</div>
+                    </div>
+                    {% endfor %}
+                    {% for r in tables.comment_rows[20:] %}
+                    <div class="event-item" style="display: none;" data-extra="comments">
+                        <div class="event-avatar" style="background: #2563eb;"><i class="fas fa-comment" style="font-size: 0.65rem;"></i></div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #111;">{{ r.user_name or r.user_email }}</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">
+                                on <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title|truncate(30) }}</a>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #4b5563; margin-top: 3px;">{{ r.body|truncate(100) }}</div>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.commented_at.strftime('%b %d, %H:%M') if r.commented_at else '' }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if tables.comment_rows|length > 20 %}
+                <div class="show-more-btn" onclick="document.querySelectorAll('[data-extra=comments]').forEach(e => e.style.display=''); this.remove();">
+                    Show all {{ tables.comment_rows|length }} comments
+                </div>
+                {% endif %}
+                {% else %}
+                    <div class="text-muted text-center py-4">No comments this month.</div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>What time people are reading (by hour)</strong></div>
-                <div class="card-body">
-                    {% set max_hour = 0 %}
-                    {% for r in tables.reads_by_hour %}{% if r.reads > max_hour %}{% set max_hour = r.reads %}{% endif %}{% endfor %}
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Hour</th>
-                                    <th style="width:60%">Activity</th>
-                                    <th class="text-right">Reads</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in tables.reads_by_hour %}
-                                    <tr>
-                                        <td><code>{{ "%02d"|format(r.hour) }}:00</code></td>
-                                        <td>
-                                            <div class="progress" style="height:10px;">
-                                                {% set pct = 0 %}
-                                                {% if max_hour > 0 %}{% set pct = (r.reads * 100 / max_hour) %}{% endif %}
-                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ pct }}%"></div>
-                                            </div>
-                                        </td>
-                                        <td class="text-right">{{ r.reads }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="text-muted small mt-2">Tip: this uses <code>ReadEvent.created_at</code> timestamps.</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>When people read (day of week)</strong></div>
-                <div class="card-body">
-                    {% set max_dow = 0 %}
-                    {% for r in tables.reads_by_dow %}{% if r.reads > max_dow %}{% set max_dow = r.reads %}{% endif %}{% endfor %}
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Day</th>
-                                    <th style="width:60%">Activity</th>
-                                    <th class="text-right">Reads</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in tables.reads_by_dow %}
-                                    <tr>
-                                        <td><strong>{{ r.day }}</strong></td>
-                                        <td>
-                                            <div class="progress" style="height:10px;">
-                                                {% set pct = 0 %}
-                                                {% if max_dow > 0 %}{% set pct = (r.reads * 100 / max_dow) %}{% endif %}
-                                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ pct }}%"></div>
-                                            </div>
-                                        </td>
-                                        <td class="text-right">{{ r.reads }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+    <!-- Comment Likes Feed -->
+    <div class="chart-card mb-4">
+        <div class="card-title"><i class="fas fa-thumbs-up text-info"></i> Comment Like Activity</div>
+        {% if tables.comment_like_rows and tables.comment_like_rows|length > 0 %}
+        <div class="event-list" id="commentLikesList">
+            {% for r in tables.comment_like_rows[:20] %}
+            <div class="event-item">
+                <div class="event-avatar" style="background: #0891b2;"><i class="fas fa-thumbs-up" style="font-size: 0.65rem;"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <span style="font-weight: 600;">{{ r.liker_name or r.liker_email }}</span>
+                    <span class="text-muted"> liked </span>
+                    <span style="font-weight: 600;">{{ r.author_name or r.author_email }}</span>'s comment
+                    <div class="text-muted" style="font-size: 0.78rem;">
+                        on <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title|truncate(35) }}</a>
+                        &mdash; "{{ r.comment_body|truncate(80) }}"
                     </div>
                 </div>
+                <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.liked_at.strftime('%b %d, %H:%M') if r.liked_at else '' }}</div>
             </div>
+            {% endfor %}
+            {% for r in tables.comment_like_rows[20:] %}
+            <div class="event-item" style="display: none;" data-extra="clikes">
+                <div class="event-avatar" style="background: #0891b2;"><i class="fas fa-thumbs-up" style="font-size: 0.65rem;"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <span style="font-weight: 600;">{{ r.liker_name or r.liker_email }}</span>
+                    <span class="text-muted"> liked </span>
+                    <span style="font-weight: 600;">{{ r.author_name or r.author_email }}</span>'s comment
+                </div>
+                <div class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">{{ r.liked_at.strftime('%b %d, %H:%M') if r.liked_at else '' }}</div>
+            </div>
+            {% endfor %}
         </div>
+        {% if tables.comment_like_rows|length > 20 %}
+        <div class="show-more-btn" onclick="document.querySelectorAll('[data-extra=clikes]').forEach(e => e.style.display=''); this.remove();">
+            Show all {{ tables.comment_like_rows|length }} comment likes
+        </div>
+        {% endif %}
+        {% else %}
+            <div class="text-muted text-center py-4">No comment likes this month.</div>
+        {% endif %}
     </div>
+</div>
 
+<!-- ==================== TECHNICAL TAB ==================== -->
+<div class="tab-pane fade" id="technical" role="tabpanel">
     <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>How far they read (scroll/progress buckets)</strong></div>
-                <div class="card-body">
-                    {% if tables.progress_buckets and tables.progress_buckets|length > 0 %}
-                        {% set max_b = 0 %}
-                        {% for r in tables.progress_buckets %}{% if r.count > max_b %}{% set max_b = r.count %}{% endif %}{% endfor %}
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Bucket</th>
-                                        <th style="width:60%">Distribution</th>
-                                        <th class="text-right">Events</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.progress_buckets %}
-                                        <tr>
-                                            <td><code>{{ r.label }}</code></td>
-                                            <td>
-                                                <div class="progress" style="height:10px;">
-                                                    {% set pct = 0 %}
-                                                    {% if max_b > 0 %}{% set pct = (r.count * 100 / max_b) %}{% endif %}
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ pct }}%"></div>
-                                                </div>
-                                            </td>
-                                            <td class="text-right">{{ r.count }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-muted small mt-2">This uses <code>ReadEvent.percent</code> values.</div>
-                    {% else %}
-                        <div class="text-muted">No progress data yet.</div>
-                    {% endif %}
+        <!-- Top IPs -->
+        <div class="col-lg-5 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-network-wired"></i> Top IP Addresses</div>
+                {% if tables.top_ips and tables.top_ips|length > 0 %}
+                <div class="table-responsive">
+                    <table class="analytics-table">
+                        <thead><tr><th>IP Address</th><th class="text-right">Events</th></tr></thead>
+                        <tbody>
+                            {% for ip, cnt in tables.top_ips %}
+                            <tr>
+                                <td><code style="font-size: 0.85rem;">{{ ip }}</code></td>
+                                <td class="text-right">{{ cnt }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                {% else %}
+                    <div class="text-muted text-center py-4">No IP data.</div>
+                {% endif %}
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>How they move (post-to-post transitions)</strong></div>
-                <div class="card-body">
-                    {% if tables.transitions and tables.transitions|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>From</th>
-                                        <th>To</th>
-                                        <th class="text-right">Count</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.transitions %}
-                                        <tr>
-                                            <td class="small">
-                                                {% if r.from_slug %}
-                                                    <a href="{{ url_for('post_detail', slug=r.from_slug) }}" target="_blank">{{ r.from_title }}</a>
-                                                {% else %}
-                                                    {{ r.from_title }}
-                                                {% endif %}
-                                            </td>
-                                            <td class="small">
-                                                {% if r.to_slug %}
-                                                    <a href="{{ url_for('post_detail', slug=r.to_slug) }}" target="_blank">{{ r.to_title }}</a>
-                                                {% else %}
-                                                    {{ r.to_title }}
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-right">{{ r.count }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-muted small mt-2">Inference rule: same reader, different post within 30 minutes.</div>
-                    {% else %}
-                        <div class="text-muted">Not enough data to infer transitions yet.</div>
-                    {% endif %}
+        <!-- Browsers/OS (Parsed User Agents) -->
+        <div class="col-lg-7 mb-4">
+            <div class="chart-card">
+                <div class="card-title"><i class="fas fa-desktop"></i> Browsers & Operating Systems</div>
+                {% if tables.top_user_agents and tables.top_user_agents|length > 0 %}
+                <canvas id="browserChart" height="200" class="mb-3"></canvas>
+                <div class="table-responsive">
+                    <table class="analytics-table">
+                        <thead><tr><th>Browser / OS</th><th class="text-right">Events</th></tr></thead>
+                        <tbody>
+                            {% for label, cnt in tables.top_user_agents %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-{% if 'Chrome' in label %}chrome{% elif 'Firefox' in label %}firefox{% elif 'Safari' in label %}safari{% elif 'Edge' in label %}edge{% else %}globe{% endif %} mr-2 text-muted"></i>
+                                    {{ label }}
+                                </td>
+                                <td class="text-right">{{ cnt }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                {% else %}
+                    <div class="text-muted text-center py-4">No browser data.</div>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <strong>Post Breakdown (this month)</strong>
-                    <span class="text-muted small">Views = unique logged-in + unique anonymous</span>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Post</th>
-                                    <th>Slug</th>
-                                    <th class="text-right">Views</th>
-                                    <th class="text-right">Likes</th>
-                                    <th class="text-right">Comments</th>
-                                    <th class="text-right">Avg Completion</th>
-                                    <th class="text-right">Time Spent (sec)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in tables.post_rows %}
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
-                                        </td>
-                                        <td><code>{{ r.post.slug }}</code></td>
-                                        <td class="text-right">{{ r.views }}</td>
-                                        <td class="text-right">{{ r.likes }}</td>
-                                        <td class="text-right">{{ r.comments }}</td>
-                                        <td class="text-right">{{ r.avg_completion }}%</td>
-                                        <td class="text-right">{{ r.total_seconds }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <!-- Recent Read Events -->
+    <div class="chart-card mb-4">
+        <div class="card-title justify-content-between">
+            <span><i class="fas fa-list"></i> Recent Read Events</span>
+            <span class="badge badge-secondary" style="font-size: 0.75rem;">Last {{ tables.recent_reads|length }}</span>
         </div>
+        {% if tables.recent_reads and tables.recent_reads|length > 0 %}
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Post</th>
+                        <th>Reader</th>
+                        <th class="text-right">Progress</th>
+                        <th class="text-right">Time</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in tables.recent_reads[:50] %}
+                    <tr>
+                        <td class="text-muted" style="font-size: 0.78rem; white-space: nowrap;">{{ e.created_at.strftime('%b %d, %H:%M') if e.created_at else '' }}</td>
+                        <td>
+                            {% if e.post %}
+                                <a href="{{ url_for('post_detail', slug=e.post.slug) }}" target="_blank" style="font-size: 0.85rem;">{{ e.post.title|truncate(30) }}</a>
+                            {% else %}
+                                <span class="text-muted">Post {{ e.post_id }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem;">
+                            {{ e.get_reader_label() }}
+                            {% if e.user_id %}
+                                <span class="badge badge-success" style="font-size: 9px;">User</span>
+                            {% else %}
+                                <span class="badge badge-secondary" style="font-size: 9px;">Anon</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-right">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <div style="width: 50px; background: #e5e7eb; height: 5px; border-radius: 3px; overflow: hidden; margin-right: 6px;">
+                                    <div style="width: {{ e.percent or 0 }}%; background: #2563eb; height: 100%;"></div>
+                                </div>
+                                <span style="font-size: 0.78rem;">{{ e.percent or 0 }}%</span>
+                            </div>
+                        </td>
+                        <td class="text-right" style="font-size: 0.85rem;">{{ e.seconds or 0 }}s</td>
+                        <td><code style="font-size: 0.75rem;">{{ e.ip_address or '' }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if tables.recent_reads|length > 50 %}
+        <div class="text-center text-muted mt-2" style="font-size: 0.8rem;">Showing 50 of {{ tables.recent_reads|length }} events</div>
+        {% endif %}
+        {% else %}
+            <div class="text-muted text-center py-4">No read events yet.</div>
+        {% endif %}
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top Posts by Views</strong></div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        {% for r in tables.top_by_views %}
-                            <li>
-                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
-                                <span class="text-muted">({{ r.views }})</span>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top Posts by Likes</strong></div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        {% for r in tables.top_by_likes %}
-                            <li>
-                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
-                                <span class="text-muted">({{ r.likes }})</span>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top Posts by Comments</strong></div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        {% for r in tables.top_by_comments %}
-                            <li>
-                                <a href="{{ url_for('admin.post_edit', post_id=r.post.id) }}">{{ r.post.title }}</a>
-                                <span class="text-muted">({{ r.comments }})</span>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Who liked what (this month)</strong></div>
-                <div class="card-body">
-                    {% if tables.like_rows and tables.like_rows|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>When</th>
-                                        <th>User</th>
-                                        <th>Post</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.like_rows %}
-                                        <tr>
-                                            <td class="text-muted small">{{ r.liked_at }}</td>
-                                            <td>
-                                                {{ r.user_name or r.user_email }}
-                                                <div class="text-muted small">{{ r.user_email }}</div>
-                                            </td>
-                                            <td>
-                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No likes yet for this month.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Who commented what (this month)</strong></div>
-                <div class="card-body">
-                    {% if tables.comment_rows and tables.comment_rows|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>When</th>
-                                        <th>User</th>
-                                        <th>Post</th>
-                                        <th>Comment</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.comment_rows %}
-                                        <tr>
-                                            <td class="text-muted small">{{ r.commented_at }}</td>
-                                            <td>
-                                                {{ r.user_name or r.user_email }}
-                                                <div class="text-muted small">{{ r.user_email }}</div>
-                                            </td>
-                                            <td>
-                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
-                                            </td>
-                                            <td class="small">{{ r.body }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No comments yet for this month.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <strong>Who liked which comment (this month)</strong>
-                    <span class="text-muted small">Liker → Comment author</span>
-                </div>
-                <div class="card-body">
-                    {% if tables.comment_like_rows and tables.comment_like_rows|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>When</th>
-                                        <th>Liker</th>
-                                        <th>Comment author</th>
-                                        <th>Post</th>
-                                        <th>Comment</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.comment_like_rows %}
-                                        <tr>
-                                            <td class="text-muted small">{{ r.liked_at }}</td>
-                                            <td>
-                                                {{ r.liker_name or r.liker_email }}
-                                                <div class="text-muted small">{{ r.liker_email }}</div>
-                                            </td>
-                                            <td>
-                                                {{ r.author_name or r.author_email }}
-                                                <div class="text-muted small">{{ r.author_email }}</div>
-                                            </td>
-                                            <td>
-                                                <a href="{{ url_for('post_detail', slug=r.post_slug) }}" target="_blank">{{ r.post_title }}</a>
-                                            </td>
-                                            <td class="small">{{ r.comment_body }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No comment likes yet for this month.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top comments by likes (this month)</strong></div>
-                <div class="card-body">
-                    {% if tables.top_comments_by_likes and tables.top_comments_by_likes|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Post</th>
-                                        <th>Comment</th>
-                                        <th class="text-right">Likes</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for r in tables.top_comments_by_likes %}
-                                        <tr>
-                                            <td class="small text-muted">Post {{ r.post_id }}</td>
-                                            <td class="small">{{ (r.comment.body or '')[:220] }}</td>
-                                            <td class="text-right">{{ r.likes }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No comments found for this month.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top IPs (reads)</strong></div>
-                <div class="card-body">
-                    {% if tables.top_ips and tables.top_ips|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>IP</th>
-                                        <th class="text-right">Reads</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ip, cnt in tables.top_ips %}
-                                        <tr>
-                                            <td><code>{{ ip }}</code></td>
-                                            <td class="text-right">{{ cnt }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-muted small mt-2">Note: this is from read events. Likes/comments don’t yet store IP/user-agent.</div>
-                    {% else %}
-                        <div class="text-muted">No read events with IP address.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Top User Agents (reads)</strong></div>
-                <div class="card-body">
-                    {% if tables.top_user_agents and tables.top_user_agents|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>User Agent</th>
-                                        <th class="text-right">Reads</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ua, cnt in tables.top_user_agents %}
-                                        <tr>
-                                            <td class="small">{{ ua }}</td>
-                                            <td class="text-right">{{ cnt }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No read events with user-agent.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header"><strong>Recent read events (micro)</strong></div>
-                <div class="card-body">
-                    {% if tables.recent_reads and tables.recent_reads|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>When</th>
-                                        <th>Post</th>
-                                        <th>Reader</th>
-                                        <th class="text-right">%</th>
-                                        <th class="text-right">Seconds</th>
-                                        <th>IP</th>
-                                        <th>User Agent</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for e in tables.recent_reads %}
-                                        <tr>
-                                            <td class="text-muted small">{{ e.created_at }}</td>
-                                            <td>
-                                                {% if e.post %}
-                                                    <a href="{{ url_for('post_detail', slug=e.post.slug) }}" target="_blank">{{ e.post.title }}</a>
-                                                {% else %}
-                                                    <span class="text-muted">Post {{ e.post_id }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="small">{{ e.get_reader_label() }}</td>
-                                            <td class="text-right small">{{ e.percent or 0 }}</td>
-                                            <td class="text-right small">{{ e.seconds or 0 }}</td>
-                                            <td class="small"><code>{{ e.ip_address or '' }}</code></td>
-                                            <td class="small">{{ e.user_agent or '' }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-muted">No read events yet.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+</div><!-- end tab-content -->
 {% endif %}
 {% endblock %}
 
+{% block extra_js %}
+{% if month_key and tables %}
+<script>
+// Chart.js defaults
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#6b7280';
+
+// Reads by Day - Line Chart
+var readsByDayData = {{ tables.reads_by_day | tojson }};
+if (readsByDayData.length > 0) {
+    new Chart(document.getElementById('readsByDayChart'), {
+        type: 'line',
+        data: {
+            labels: readsByDayData.map(r => r.day),
+            datasets: [{
+                label: 'Read Events',
+                data: readsByDayData.map(r => r.reads),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: '#2563eb',
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0 } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 15, maxRotation: 45 } }
+            }
+        }
+    });
+}
+
+// Reads by Hour - Bar Chart
+var readsByHourData = {{ tables.reads_by_hour | tojson }};
+new Chart(document.getElementById('readsByHourChart'), {
+    type: 'bar',
+    data: {
+        labels: readsByHourData.map(r => r.hour + ':00'),
+        datasets: [{
+            data: readsByHourData.map(r => r.reads),
+            backgroundColor: readsByHourData.map((r, i) => {
+                var max = Math.max(...readsByHourData.map(x => x.reads));
+                var opacity = max > 0 ? 0.3 + (r.reads / max * 0.7) : 0.3;
+                return 'rgba(37, 99, 235, ' + opacity + ')';
+            }),
+            borderRadius: 4,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0 } },
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 10 } } }
+        }
+    }
+});
+
+// Reads by Day of Week - Bar Chart
+var readsByDowData = {{ tables.reads_by_dow | tojson }};
+new Chart(document.getElementById('readsByDowChart'), {
+    type: 'bar',
+    data: {
+        labels: readsByDowData.map(r => r.day),
+        datasets: [{
+            label: 'Reads',
+            data: readsByDowData.map(r => r.reads),
+            backgroundColor: ['#f59e0b', '#2563eb', '#2563eb', '#2563eb', '#2563eb', '#2563eb', '#f59e0b'],
+            borderRadius: 6,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0 } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// Progress Doughnut
+var progressData = {{ tables.progress_buckets | tojson }};
+if (progressData.length > 0) {
+    new Chart(document.getElementById('progressChart'), {
+        type: 'doughnut',
+        data: {
+            labels: progressData.map(r => r.label),
+            datasets: [{
+                data: progressData.map(r => r.count),
+                backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#2563eb'],
+                borderWidth: 2,
+                borderColor: '#fff',
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '55%',
+            plugins: {
+                legend: { position: 'right', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } }
+            }
+        }
+    });
+}
+
+// Browser Pie Chart
+var uaData = {{ tables.top_user_agents | tojson }};
+if (uaData.length > 0) {
+    var colors = ['#2563eb', '#059669', '#dc2626', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#84cc16', '#6366f1', '#f43f5e', '#14b8a6', '#a855f7', '#f59e0b', '#64748b', '#ec4899'];
+    new Chart(document.getElementById('browserChart'), {
+        type: 'pie',
+        data: {
+            labels: uaData.map(r => r[0]),
+            datasets: [{
+                data: uaData.map(r => r[1]),
+                backgroundColor: colors.slice(0, uaData.length),
+                borderWidth: 2,
+                borderColor: '#fff',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right', labels: { padding: 8, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } }
+            }
+        }
+    });
+}
+
+// Table sorting
+function sortTable(colIndex, type) {
+    var table = document.getElementById('postBreakdownTable');
+    var tbody = table.querySelector('tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var asc = table.dataset.sortCol == colIndex && table.dataset.sortDir == 'asc';
+
+    rows.sort(function(a, b) {
+        var aVal = a.cells[colIndex].textContent.trim();
+        var bVal = b.cells[colIndex].textContent.trim();
+        if (type === 'num') {
+            aVal = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+            bVal = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+        }
+        if (aVal < bVal) return asc ? -1 : 1;
+        if (aVal > bVal) return asc ? 1 : -1;
+        return 0;
+    });
+
+    rows.forEach(function(row) { tbody.appendChild(row); });
+    table.dataset.sortCol = colIndex;
+    table.dataset.sortDir = asc ? 'desc' : 'asc';
+}
+</script>
+{% endif %}
+{% endblock %}

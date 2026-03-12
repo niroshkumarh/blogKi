@@ -242,23 +242,25 @@
             <div class="section-title">
                 <i class="fas fa-users"></i>
                 <span>Who Read This Article</span>
-                <span class="badge-count ms-auto">{{ viewers|length }}</span>
+                <span class="badge-count ms-auto">{{ viewers|length + anon_readers|length }}</span>
             </div>
-            {% if viewers %}
+            {% if viewers or anon_readers %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th width="5%">#</th>
-                            <th width="40%">User</th>
-                            <th width="30%">Email</th>
-                            <th width="25%">Last Read</th>
+                            <th width="10%">Type</th>
+                            <th width="35%">Reader</th>
+                            <th width="25%">Details</th>
+                            <th width="25%">Last Seen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for viewer in viewers %}
                         <tr>
                             <td class="text-muted">{{ loop.index }}</td>
+                            <td><span class="badge bg-success" style="font-size: 10px;">Logged In</span></td>
                             <td>
                                 <div class="user-name">
                                     <i class="fas fa-user-circle me-2" style="color: #9ca3af;"></i>
@@ -269,6 +271,26 @@
                             <td class="timestamp">
                                 <i class="far fa-clock me-1"></i>
                                 {{ viewer.last_login_at.strftime('%b %d, %Y at %I:%M %p') if viewer.last_login_at else 'Never' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% for anon in anon_readers %}
+                        <tr>
+                            <td class="text-muted">{{ viewers|length + loop.index }}</td>
+                            <td><span class="badge bg-secondary" style="font-size: 10px;">Anonymous</span></td>
+                            <td>
+                                <div class="user-name">
+                                    <i class="fas fa-user-secret me-2" style="color: #6b7280;"></i>
+                                    Anon ({{ anon.anon_id[:8] }}...)
+                                </div>
+                            </td>
+                            <td class="text-muted">
+                                {{ anon.events }} event{{ 's' if anon.events != 1 else '' }}
+                                {% if anon.ip_address %} &middot; <code style="font-size: 11px;">{{ anon.ip_address }}</code>{% endif %}
+                            </td>
+                            <td class="timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                {{ anon.last_seen.strftime('%b %d, %Y at %I:%M %p') if anon.last_seen else 'Unknown' }}
                             </td>
                         </tr>
                         {% endfor %}
