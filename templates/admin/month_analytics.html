@@ -13,6 +13,14 @@
     }
     .analytics-header h1 { font-size: 1.75rem; font-weight: 700; margin: 0; }
     .analytics-header .month-label { opacity: 0.85; font-size: 0.95rem; }
+    .analytics-header .custom-switch .custom-control-label::before {
+        background-color: rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.4);
+    }
+    .analytics-header .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #38bdf8;
+        border-color: #38bdf8;
+    }
 
     .stat-card-v2 {
         background: #fff;
@@ -191,16 +199,29 @@
             <div class="month-label mt-1">{{ month_key }}</div>
         {% endif %}
     </div>
-    <form method="GET" class="d-flex align-items-center mt-2 mt-md-0">
-        <select class="form-control form-control-sm mr-2" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); min-width: 140px;"
-                onchange="if(this.value){ window.location='{{ url_for('admin.month_analytics', month_key='__MONTH__') }}'.replace('__MONTH__', this.value); }">
+    <div class="d-flex align-items-center mt-2 mt-md-0 flex-wrap" style="gap: 10px;">
+        <!-- Exclude Admins Toggle -->
+        <div class="d-flex align-items-center" style="background: rgba(255,255,255,0.12); border-radius: 8px; padding: 5px 12px;">
+            <label class="mb-0 mr-2" style="font-size: 0.8rem; opacity: 0.9; white-space: nowrap; cursor: pointer;" for="excludeAdminsToggle">
+                <i class="fas fa-user-shield mr-1"></i>Exclude Admins
+            </label>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="excludeAdminsToggle"
+                       {% if exclude_admins %}checked{% endif %}
+                       onchange="toggleAdminFilter(this.checked)">
+                <label class="custom-control-label" for="excludeAdminsToggle"></label>
+            </div>
+        </div>
+        <!-- Month Selector -->
+        <select class="form-control form-control-sm" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); min-width: 140px; width: auto;"
+                onchange="if(this.value){ navigateMonth(this.value); }">
             <option value="">Select month</option>
             {% for m in months %}
                 <option value="{{ m }}" {% if month_key == m %}selected{% endif %} style="color: #111;">{{ m }}</option>
             {% endfor %}
         </select>
         <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin.analytics') }}">Latest</a>
-    </form>
+    </div>
 </div>
 
 {% if not month_key %}
@@ -744,6 +765,26 @@
 {% block extra_js %}
 {% if month_key and tables %}
 <script>
+// Admin filter toggle
+function toggleAdminFilter(checked) {
+    var url = new URL(window.location.href);
+    if (checked) {
+        url.searchParams.set('exclude_admins', '1');
+    } else {
+        url.searchParams.delete('exclude_admins');
+    }
+    window.location.href = url.toString();
+}
+
+function navigateMonth(monthVal) {
+    var base = '{{ url_for("admin.month_analytics", month_key="__MONTH__") }}'.replace('__MONTH__', monthVal);
+    var url = new URL(base, window.location.origin);
+    {% if exclude_admins %}
+    url.searchParams.set('exclude_admins', '1');
+    {% endif %}
+    window.location.href = url.toString();
+}
+
 // Chart.js defaults
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 Chart.defaults.font.size = 12;

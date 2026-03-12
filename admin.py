@@ -131,6 +131,16 @@ def analytics():
 @admin_required
 def month_analytics(month_key):
     """Monthly analytics dashboard based on Post.month_key."""
+    # Check if admin data should be excluded
+    exclude_admins = request.args.get('exclude_admins', '0') == '1'
+
+    # Get admin user IDs for filtering
+    admin_emails = current_app.config.get('ADMIN_EMAILS', [])
+    admin_user_ids = []
+    if exclude_admins and admin_emails:
+        admin_users = User.query.filter(User.email.in_(admin_emails)).all()
+        admin_user_ids = [u.id for u in admin_users]
+
     # Month list for selector
     months = db.session.query(Post.month_key).filter_by(status='published').distinct().order_by(Post.month_key.desc()).all()
     months = [m[0] for m in months if m and m[0]]
@@ -145,6 +155,7 @@ def month_analytics(month_key):
             'admin/month_analytics.html',
             month_key=month_key,
             months=months,
+            exclude_admins=exclude_admins,
             summary={
                 'total_posts': 0,
                 'total_reads': 0,
@@ -164,10 +175,16 @@ def month_analytics(month_key):
     total_posts = len(posts)
     total_registered_users = User.query.count()
 
-    total_reads = ReadEvent.query.filter(ReadEvent.post_id.in_(post_ids)).count()
+    # Base read query with optional admin exclusion
+    read_filter = [ReadEvent.post_id.in_(post_ids)]
+    if admin_user_ids:
+        read_filter.append(~ReadEvent.user_id.in_(admin_user_ids))
+
+    total_reads = ReadEvent.query.filter(*read_filter).count()
     unique_logged_in_readers = db.session.query(ReadEvent.user_id).filter(
         ReadEvent.post_id.in_(post_ids),
-        ReadEvent.user_id.isnot(None)
+        ReadEvent.user_id.isnot(None),
+        *([~ReadEvent.user_id.in_(admin_user_ids)] if admin_user_ids else [])
     ).distinct().count()
     unique_anon_readers = db.session.query(ReadEvent.anon_id).filter(
         ReadEvent.post_id.in_(post_ids),
@@ -175,45 +192,55 @@ def month_analytics(month_key):
     ).distinct().count()
     unique_readers = unique_logged_in_readers + unique_anon_readers
 
-    total_likes = Like.query.filter(Like.post_id.in_(post_ids)).count()
-    total_comments = Comment.query.filter(Comment.post_id.in_(post_ids)).count()
-    total_comment_likes = (
+    # Like/comment queries with optional admin exclusion
+    like_filter = [Like.post_id.in_(post_ids)]
+    if admin_user_ids:
+        like_filter.append(~Like.user_id.in_(admin_user_ids))
+    total_likes = Like.query.filter(*like_filter).count()
+
+    comment_filter = [Comment.post_id.in_(post_ids)]
+    if admin_user_ids:
+        comment_filter.append(~Comment.user_id.in_(admin_user_ids))
+    total_comments = Comment.query.filter(*comment_filter).count()
+
+    comment_likes_q = (
         db.session.query(CommentLike.id)
         .join(Comment, Comment.id == CommentLike.comment_id)
         .join(Post, Post.id == Comment.post_id)
         .filter(Post.month_key == month_key, Post.status == 'published')
-        .count()
     )
+    if admin_user_ids:
+        comment_likes_q = comment_likes_q.filter(~CommentLike.user_id.in_(admin_user_ids))
+    total_comment_likes = comment_likes_q.count()
 
     # Aggregations per post
-    likes_by_post = dict(
-        db.session.query(Like.post_id, func.count(Like.id))
-        .filter(Like.post_id.in_(post_ids))
-        .group_by(Like.post_id)
-        .all()
-    )
-    comments_by_post = dict(
-        db.session.query(Comment.post_id, func.count(Comment.id))
-        .filter(Comment.post_id.in_(post_ids))
-        .group_by(Comment.post_id)
-        .all()
-    )
-    comment_likes_by_comment = dict(
+    likes_q = db.session.query(Like.post_id, func.count(Like.id)).filter(Like.post_id.in_(post_ids))
+    if admin_user_ids:
+        likes_q = likes_q.filter(~Like.user_id.in_(admin_user_ids))
+    likes_by_post = dict(likes_q.group_by(Like.post_id).all())
+
+    comments_q = db.session.query(Comment.post_id, func.count(Comment.id)).filter(Comment.post_id.in_(post_ids))
+    if admin_user_ids:
+        comments_q = comments_q.filter(~Comment.user_id.in_(admin_user_ids))
+    comments_by_post = dict(comments_q.group_by(Comment.post_id).all())
+    cl_q = (
         db.session.query(CommentLike.comment_id, func.count(CommentLike.id))
         .join(Comment, Comment.id == CommentLike.comment_id)
         .filter(Comment.post_id.in_(post_ids))
-        .group_by(CommentLike.comment_id)
-        .all()
     )
+    if admin_user_ids:
+        cl_q = cl_q.filter(~CommentLike.user_id.in_(admin_user_ids))
+    comment_likes_by_comment = dict(cl_q.group_by(CommentLike.comment_id).all())
+
     avg_completion_by_post = dict(
         db.session.query(ReadEvent.post_id, func.avg(ReadEvent.percent))
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .group_by(ReadEvent.post_id)
         .all()
     )
     seconds_by_post = dict(
         db.session.query(ReadEvent.post_id, func.coalesce(func.sum(ReadEvent.seconds), 0))
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .group_by(ReadEvent.post_id)
         .all()
     )
@@ -221,10 +248,13 @@ def month_analytics(month_key):
     post_rows = []
     for p in posts:
         # Unique viewers (logged-in + anon) per post
-        post_unique_users = db.session.query(ReadEvent.user_id).filter(
+        user_q = db.session.query(ReadEvent.user_id).filter(
             ReadEvent.post_id == p.id,
             ReadEvent.user_id.isnot(None)
-        ).distinct().count()
+        )
+        if admin_user_ids:
+            user_q = user_q.filter(~ReadEvent.user_id.in_(admin_user_ids))
+        post_unique_users = user_q.distinct().count()
         post_unique_anon = db.session.query(ReadEvent.anon_id).filter(
             ReadEvent.post_id == p.id,
             ReadEvent.anon_id.isnot(None)
@@ -248,12 +278,10 @@ def month_analytics(month_key):
     top_by_comments = sorted(post_rows, key=lambda r: r['comments'], reverse=True)[:10]
 
     # Top comments by comment-like count (for posts in this month)
-    month_comments = (
-        Comment.query
-        .filter(Comment.post_id.in_(post_ids))
-        .order_by(Comment.created_at.desc())
-        .all()
-    )
+    month_comments_q = Comment.query.filter(Comment.post_id.in_(post_ids))
+    if admin_user_ids:
+        month_comments_q = month_comments_q.filter(~Comment.user_id.in_(admin_user_ids))
+    month_comments = month_comments_q.order_by(Comment.created_at.desc()).all()
     comment_rows = [{
         'comment': c,
         'post_id': c.post_id,
@@ -262,15 +290,15 @@ def month_analytics(month_key):
     top_comments_by_likes = sorted(comment_rows, key=lambda r: r['likes'], reverse=True)[:20]
 
     # Who liked what (for posts in this month)
-    like_events = (
+    like_events_q = (
         db.session.query(Like, User, Post)
         .join(User, User.id == Like.user_id)
         .join(Post, Post.id == Like.post_id)
         .filter(Post.month_key == month_key, Post.status == 'published')
-        .order_by(Like.created_at.desc())
-        .limit(300)
-        .all()
     )
+    if admin_user_ids:
+        like_events_q = like_events_q.filter(~Like.user_id.in_(admin_user_ids))
+    like_events = like_events_q.order_by(Like.created_at.desc()).limit(300).all()
     like_rows = [{
         'liked_at': like.created_at,
         'user_name': user.name,
@@ -280,15 +308,15 @@ def month_analytics(month_key):
     } for (like, user, post) in like_events]
 
     # Who commented what (for posts in this month)
-    comment_events = (
+    comment_events_q = (
         db.session.query(Comment, User, Post)
         .join(User, User.id == Comment.user_id)
         .join(Post, Post.id == Comment.post_id)
         .filter(Post.month_key == month_key, Post.status == 'published')
-        .order_by(Comment.created_at.desc())
-        .limit(300)
-        .all()
     )
+    if admin_user_ids:
+        comment_events_q = comment_events_q.filter(~Comment.user_id.in_(admin_user_ids))
+    comment_events = comment_events_q.order_by(Comment.created_at.desc()).limit(300).all()
     comment_event_rows = [{
         'commented_at': c.created_at,
         'user_name': u.name,
@@ -301,17 +329,17 @@ def month_analytics(month_key):
     # Who liked which comment (for posts in this month)
     Liker = aliased(User)
     Author = aliased(User)
-    comment_like_events = (
+    comment_like_events_q = (
         db.session.query(CommentLike, Liker, Comment, Post, Author)
         .join(Liker, Liker.id == CommentLike.user_id)
         .join(Comment, Comment.id == CommentLike.comment_id)
         .join(Post, Post.id == Comment.post_id)
         .join(Author, Author.id == Comment.user_id)
         .filter(Post.month_key == month_key, Post.status == 'published')
-        .order_by(CommentLike.created_at.desc())
-        .limit(300)
-        .all()
     )
+    if admin_user_ids:
+        comment_like_events_q = comment_like_events_q.filter(~CommentLike.user_id.in_(admin_user_ids))
+    comment_like_events = comment_like_events_q.order_by(CommentLike.created_at.desc()).limit(300).all()
     comment_like_rows = [{
         'liked_at': cl.created_at,
         'liker_name': liker.name,
@@ -324,22 +352,22 @@ def month_analytics(month_key):
     } for (cl, liker, comment, post, author) in comment_like_events]
 
     # "Where" (reads only, since Like/Comment don't store ip/user_agent yet)
-    top_ips = (
+    top_ips_q = (
         db.session.query(ReadEvent.ip_address, func.count(ReadEvent.id))
         .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.ip_address.isnot(None))
-        .group_by(ReadEvent.ip_address)
-        .order_by(func.count(ReadEvent.id).desc())
-        .limit(20)
-        .all()
     )
-    top_user_agents_raw = (
+    if admin_user_ids:
+        top_ips_q = top_ips_q.filter(~ReadEvent.user_id.in_(admin_user_ids))
+    top_ips = top_ips_q.group_by(ReadEvent.ip_address).order_by(func.count(ReadEvent.id).desc()).limit(20).all()
+
+    top_ua_q = (
         db.session.query(ReadEvent.user_agent, func.count(ReadEvent.id))
         .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.user_agent.isnot(None))
-        .group_by(ReadEvent.user_agent)
-        .order_by(func.count(ReadEvent.id).desc())
-        .limit(20)
-        .all()
     )
+    if admin_user_ids:
+        top_ua_q = top_ua_q.filter(~ReadEvent.user_id.in_(admin_user_ids))
+    top_user_agents_raw = top_ua_q.group_by(ReadEvent.user_agent).order_by(func.count(ReadEvent.id).desc()).limit(20).all()
+
     # Parse user agents into readable labels and aggregate
     ua_parsed = {}
     for ua, cnt in top_user_agents_raw:
@@ -349,7 +377,7 @@ def month_analytics(month_key):
 
     recent_reads = (
         ReadEvent.query
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .order_by(ReadEvent.created_at.desc())
         .limit(200)
         .all()
@@ -367,14 +395,23 @@ def month_analytics(month_key):
 
         prev_post_ids = [p.id for p in Post.query.filter_by(status='published', month_key=prev_month_key).all()]
         if prev_post_ids:
+            prev_read_filter = [ReadEvent.post_id.in_(prev_post_ids)]
+            if admin_user_ids:
+                prev_read_filter.append(~ReadEvent.user_id.in_(admin_user_ids))
+            prev_like_filter = [Like.post_id.in_(prev_post_ids)]
+            if admin_user_ids:
+                prev_like_filter.append(~Like.user_id.in_(admin_user_ids))
+            prev_comment_filter = [Comment.post_id.in_(prev_post_ids)]
+            if admin_user_ids:
+                prev_comment_filter.append(~Comment.user_id.in_(admin_user_ids))
             prev_summary = {
-                'total_reads': ReadEvent.query.filter(ReadEvent.post_id.in_(prev_post_ids)).count(),
+                'total_reads': ReadEvent.query.filter(*prev_read_filter).count(),
                 'unique_readers': (
-                    db.session.query(ReadEvent.user_id).filter(ReadEvent.post_id.in_(prev_post_ids), ReadEvent.user_id.isnot(None)).distinct().count() +
+                    db.session.query(ReadEvent.user_id).filter(ReadEvent.post_id.in_(prev_post_ids), ReadEvent.user_id.isnot(None), *([~ReadEvent.user_id.in_(admin_user_ids)] if admin_user_ids else [])).distinct().count() +
                     db.session.query(ReadEvent.anon_id).filter(ReadEvent.post_id.in_(prev_post_ids), ReadEvent.anon_id.isnot(None)).distinct().count()
                 ),
-                'total_likes': Like.query.filter(Like.post_id.in_(prev_post_ids)).count(),
-                'total_comments': Comment.query.filter(Comment.post_id.in_(prev_post_ids)).count(),
+                'total_likes': Like.query.filter(*prev_like_filter).count(),
+                'total_comments': Comment.query.filter(*prev_comment_filter).count(),
             }
     except Exception:
         pass
@@ -382,7 +419,7 @@ def month_analytics(month_key):
     # Reads by day (micro granularity)
     reads_by_day = (
         db.session.query(func.date(ReadEvent.created_at), func.count(ReadEvent.id))
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .group_by(func.date(ReadEvent.created_at))
         .order_by(func.date(ReadEvent.created_at).asc())
         .all()
@@ -392,7 +429,7 @@ def month_analytics(month_key):
     # Reads by hour (what time people are reading)
     reads_by_hour_raw = (
         db.session.query(func.extract('hour', ReadEvent.created_at).label('hr'), func.count(ReadEvent.id))
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .group_by('hr')
         .order_by('hr')
         .all()
@@ -403,7 +440,7 @@ def month_analytics(month_key):
     # Reads by day-of-week (0=Sunday..6=Saturday in Postgres)
     reads_by_dow_raw = (
         db.session.query(func.extract('dow', ReadEvent.created_at).label('dow'), func.count(ReadEvent.id))
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .group_by('dow')
         .order_by('dow')
         .all()
@@ -415,7 +452,7 @@ def month_analytics(month_key):
     # Scroll/reading progress distribution (how they are moving)
     percent_values = (
         db.session.query(ReadEvent.percent)
-        .filter(ReadEvent.post_id.in_(post_ids), ReadEvent.percent.isnot(None))
+        .filter(*read_filter, ReadEvent.percent.isnot(None))
         .all()
     )
     buckets = [
@@ -442,7 +479,7 @@ def month_analytics(month_key):
     # We infer a transition if the same reader (user_id or anon_id) reads different posts within 30 minutes.
     events = (
         db.session.query(ReadEvent.created_at, ReadEvent.post_id, ReadEvent.user_id, ReadEvent.anon_id)
-        .filter(ReadEvent.post_id.in_(post_ids))
+        .filter(*read_filter)
         .order_by(ReadEvent.user_id.asc().nulls_last(), ReadEvent.anon_id.asc().nulls_last(), ReadEvent.created_at.asc())
         .limit(20000)
         .all()
@@ -516,6 +553,7 @@ def month_analytics(month_key):
         'admin/month_analytics.html',
         month_key=month_key,
         months=months,
+        exclude_admins=exclude_admins,
         summary=summary,
         prev_summary=prev_summary,
         posts=posts,
@@ -1383,12 +1421,9 @@ def prerelease_users():
         user = User.query.get_or_404(user_id)
 
         if action == 'add':
-            if user.is_admin(current_app.config['ADMIN_EMAILS']):
-                flash(f'{user.name or user.email} is already an admin with full access', 'warning')
-            else:
-                user.role = 'prerelease'
-                db.session.commit()
-                flash(f'{user.name or user.email} added to PreRelease group', 'success')
+            user.role = 'prerelease'
+            db.session.commit()
+            flash(f'{user.name or user.email} added to PreRelease group', 'success')
         elif action == 'remove':
             user.role = 'user'
             db.session.commit()
@@ -1396,11 +1431,9 @@ def prerelease_users():
 
         return redirect(url_for('admin.prerelease_users'))
 
-    admin_emails = current_app.config['ADMIN_EMAILS']
     prerelease_members = User.query.filter_by(role='prerelease').order_by(User.name).all()
-    # Exclude admins — they already have full access
-    regular_users = [u for u in User.query.filter_by(role='user').order_by(User.name).all()
-                     if u.email not in admin_emails]
+    # All non-prerelease users (including admins) can be added
+    regular_users = User.query.filter_by(role='user').order_by(User.name).all()
 
     return render_template('admin/prerelease_users.html',
                           prerelease_members=prerelease_members,
