@@ -638,20 +638,25 @@ $(document).ready(function() {
                 node.setAttribute('data-preview', JSON.stringify(value));
                 node.classList.add('link-preview-embed');
                 
-                // Create preview card HTML
-                const cardHtml = `
-                    <div class="link-preview-card">
-                        ${value.image ? `<div class="preview-image"><img src="${value.image}" alt="${value.title || ''}"></div>` : ''}
-                        <div class="preview-content">
-                            <div class="preview-site-name">${value.site_name || ''}</div>
-                            <div class="preview-title">${value.title || 'No title'}</div>
-                            ${value.description ? `<div class="preview-description">${value.description}</div>` : ''}
-                            <div class="preview-url"><i class="fas fa-link"></i> <span>${value.url}</span></div>
+                // For Instagram, only show the embed — no preview card
+                let cardHtml;
+                if (value.provider === 'instagram.com' && value.embed_html) {
+                    cardHtml = `<div class="link-preview-card"><div class="preview-embed">${value.embed_html}</div></div>`;
+                } else {
+                    cardHtml = `
+                        <div class="link-preview-card">
+                            ${value.image ? `<div class="preview-image"><img src="${value.image}" alt="${value.title || ''}"></div>` : ''}
+                            <div class="preview-content">
+                                <div class="preview-site-name">${value.site_name || ''}</div>
+                                <div class="preview-title">${value.title || 'No title'}</div>
+                                ${value.description ? `<div class="preview-description">${value.description}</div>` : ''}
+                                <div class="preview-url"><i class="fas fa-link"></i> <span>${value.url}</span></div>
+                            </div>
+                            ${value.type === 'video' && !value.embed_html ? '<div class="preview-play-overlay"><i class="fas fa-play-circle"></i></div>' : ''}
+                            ${value.embed_html ? `<div class="preview-embed">${value.embed_html}</div>` : ''}
                         </div>
-                        ${value.type === 'video' && !value.embed_html ? '<div class="preview-play-overlay"><i class="fas fa-play-circle"></i></div>' : ''}
-                        ${value.embed_html ? `<div class="preview-embed">${value.embed_html}</div>` : ''}
-                    </div>
-                `;
+                    `;
+                }
                 
                 node.innerHTML = cardHtml;
                 node.setAttribute('contenteditable', 'false');
@@ -1096,13 +1101,53 @@ $('#hero_image').on('change', function(e) {
 // CUSTOM TOOLBAR HANDLERS
 // ========================================
 
-// Enhanced Video embed handler with YouTube Shorts support
+// Enhanced Video embed handler with YouTube Shorts and Instagram support
 function videoHandler() {
-        const url = prompt('Enter video URL (YouTube, YouTube Shorts, Vimeo, or direct link):');
+        const url = prompt('Enter video URL (YouTube, YouTube Shorts, Vimeo, Instagram, or direct link):');
         if (!url) return;
-        
+
+        // Handle Instagram URLs separately (reels, posts, videos)
+        if (url.includes('instagram.com/')) {
+            const cleanUrl = url.trim().replace(/\/+$/, '');
+            const range = quill.getSelection(true) || { index: quill.getLength() };
+
+            // Use the link preview API which handles Instagram embeds
+            $.ajax({
+                url: '{{ url_for("api.link_preview") }}',
+                method: 'GET',
+                data: { url: cleanUrl },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        quill.insertEmbed(range.index, 'linkPreview', response.data);
+                        quill.insertText(range.index + 1, '\n');
+                        quill.setSelection(range.index + 2);
+
+                        // Process Instagram embed
+                        setTimeout(function() {
+                            if (window.instgrm) {
+                                window.instgrm.Embeds.process();
+                            } else {
+                                var s = document.createElement('script');
+                                s.async = true;
+                                s.src = '//www.instagram.com/embed.js';
+                                document.body.appendChild(s);
+                            }
+                        }, 100);
+
+                        showNotification('Instagram embed inserted!', 'success');
+                    } else {
+                        showNotification('Failed to load Instagram embed', 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Failed to load Instagram embed', 'error');
+                }
+            });
+            return;
+        }
+
         let embedUrl = url;
-        
+
         // Convert YouTube URLs to embed format
         if (url.includes('youtube.com/watch?v=')) {
             const videoId = url.split('v=')[1].split('&')[0];
@@ -1127,11 +1172,11 @@ function videoHandler() {
             const videoId = url.split('video/')[1].split('_')[0];
             embedUrl = `https://www.dailymotion.com/embed/video/${videoId}`;
         }
-        
+
         const range = quill.getSelection(true) || { index: quill.getLength() };
         quill.insertEmbed(range.index, 'video', embedUrl);
         quill.setSelection(range.index + 1);
-        
+
         // Show success message
         showNotification('Video embedded successfully! (Preview may not show in editor)', 'success');
     }
@@ -1166,7 +1211,21 @@ function handleLinkPreview() {
                 quill.insertEmbed(range.index, 'linkPreview', previewData);
                 quill.insertText(range.index + 1, '\n');
                 quill.setSelection(range.index + 2);
-                
+
+                // Process Instagram embeds after insertion
+                if (previewData.provider === 'instagram.com') {
+                    setTimeout(function() {
+                        if (window.instgrm) {
+                            window.instgrm.Embeds.process();
+                        } else {
+                            var s = document.createElement('script');
+                            s.async = true;
+                            s.src = '//www.instagram.com/embed.js';
+                            document.body.appendChild(s);
+                        }
+                    }, 100);
+                }
+
                 showNotification('Link preview inserted!', 'success');
             } else {
                 showNotification('Failed to fetch preview: ' + (response.error || 'Unknown error'), 'error');

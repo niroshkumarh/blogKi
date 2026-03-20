@@ -971,5 +971,18 @@ $(document).ready(function() {
     
     console.log('📖 Read tracking initialized for post:', postId);
 });
+
+// Process Instagram embeds if any exist in the post content
+if (document.querySelector('.instagram-media')) {
+    if (window.instgrm) {
+        window.instgrm.Embeds.process();
+    } else {
+        // Load embed.js if not already loaded
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = '//www.instagram.com/embed.js';
+        document.body.appendChild(s);
+    }
+}
 </script>
 {% endblock %}

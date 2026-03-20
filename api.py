@@ -88,12 +88,53 @@ def is_safe_url(url):
         return False, f"URL validation error: {str(e)}"
 
 
+def get_instagram_embed(url):
+    """Build Instagram embed using blockquote + embed.js (iframe approach is blocked by X-Frame-Options)"""
+    try:
+        parsed = urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        if 'instagram.com' not in domain:
+            return None
+
+        # Clean URL for the embed permalink
+        clean_url = url.rstrip('/')
+
+        embed_html = (
+            f'<blockquote class="instagram-media" data-instgrm-captioned '
+            f'data-instgrm-permalink="{clean_url}/" '
+            f'style="background:#FFF; border:0; border-radius:3px; '
+            f'box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); '
+            f'margin:1px; max-width:540px; min-width:326px; padding:0; width:99.375%;">'
+            f'<a href="{clean_url}/" target="_blank">View on Instagram</a>'
+            f'</blockquote>'
+            f'<script async src="//www.instagram.com/embed.js"></script>'
+        )
+
+        return {
+            'type': 'video',
+            'url': url,
+            'title': 'Instagram Post',
+            'description': '',
+            'image': '',
+            'site_name': 'Instagram',
+            'embed_html': embed_html,
+            'provider': 'instagram.com'
+        }
+    except Exception as e:
+        current_app.logger.error(f"Instagram embed error: {e}")
+        return None
+
+
 def get_oembed_data(url):
     """Try to fetch oEmbed data from known providers"""
     try:
         parsed = urlparse(url)
         domain = parsed.netloc.replace('www.', '')
-        
+
+        # Instagram requires special handling (no public oEmbed without access token)
+        if 'instagram.com' in domain:
+            return get_instagram_embed(url)
+
         # Check if domain has oEmbed support
         for provider_domain, oembed_url in OEMBED_PROVIDERS.items():
             if provider_domain in domain:
@@ -103,7 +144,7 @@ def get_oembed_data(url):
                         timeout=5,
                         headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
                     )
-                    
+
                     if response.status_code == 200:
                         data = response.json()
                         return {
@@ -119,9 +160,9 @@ def get_oembed_data(url):
                 except Exception as e:
                     current_app.logger.warning(f"oEmbed fetch failed for {url}: {e}")
                     continue
-        
+
         return None
-        
+
     except Exception as e:
         current_app.logger.error(f"oEmbed error: {e}")
         return None
